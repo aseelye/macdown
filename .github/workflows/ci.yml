@@ -28,5 +28,8 @@ jobs:
       - name: Install pods
         run: pod install --deployment
 
+      - name: Build peg-markdown-highlight parser
+        run: make -C Dependency/peg-markdown-highlight
+
       - name: Build and test
         run: xcodebuild test -workspace MacDown.xcworkspace -scheme MacDown -destination 'platform=macOS'
