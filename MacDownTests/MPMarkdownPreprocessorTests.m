@@ -64,4 +64,45 @@
         markdown);
 }
 
+- (void)testInsertsBlankLineBetweenParagraphAndList
+{
+    NSString *markdown = @"Paragraph\n- item\n";
+    NSString *expected = @"Paragraph\n\n- item\n";
+    XCTAssertEqualObjects(
+        [MPMarkdownPreprocessor markdownForRenderingFromMarkdown:markdown],
+        expected);
+}
+
+- (void)testInsertsBlankLineBetweenBoldParagraphAndList
+{
+    NSString *markdown =
+        @"**Mapbox**\n"
+         "- `NEXT_PUBLIC_MAPBOX_TOKEN`\n";
+    NSString *expected =
+        @"**Mapbox**\n"
+         "\n"
+         "- `NEXT_PUBLIC_MAPBOX_TOKEN`\n";
+    XCTAssertEqualObjects(
+        [MPMarkdownPreprocessor markdownForRenderingFromMarkdown:markdown],
+        expected);
+}
+
+- (void)testInsertsBlankLineBetweenParagraphAndFencedCodeBlock
+{
+    NSString *markdown =
+        @"**Commands**\n"
+         "```sh\n"
+         "echo hi\n"
+         "```\n";
+    NSString *expected =
+        @"**Commands**\n"
+         "\n"
+         "```sh\n"
+         "echo hi\n"
+         "```\n";
+    XCTAssertEqualObjects(
+        [MPMarkdownPreprocessor markdownForRenderingFromMarkdown:markdown],
+        expected);
+}
+
 @end

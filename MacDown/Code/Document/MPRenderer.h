@@ -27,6 +27,7 @@ typedef NS_ENUM(NSUInteger, MPCodeBlockAccessoryType)
 
 - (void)parseAndRenderNow;
 - (void)parseAndRenderLater;
+- (void)parseAndRenderIfNeeded;
 - (void)parseIfPreferencesChanged;
 - (void)renderIfPreferencesChanged;
 - (void)render;
@@ -51,6 +52,7 @@ typedef NS_ENUM(NSUInteger, MPCodeBlockAccessoryType)
 - (int)rendererExtensions:(MPRenderer *)renderer;
 - (BOOL)rendererHasSmartyPants:(MPRenderer *)renderer;
 - (BOOL)rendererRendersTOC:(MPRenderer *)renderer;
+- (NSString *)rendererTemplateName:(MPRenderer *)renderer;
 - (NSString *)rendererStyleName:(MPRenderer *)renderer;
 - (BOOL)rendererDetectsFrontMatter:(MPRenderer *)renderer;
 - (BOOL)rendererHasSyntaxHighlighting:(MPRenderer *)renderer;

@@ -27,7 +27,6 @@ NSString *(^MPFileNameHasExtensionProcessor(NSString *ext))(NSString *path);
 
 BOOL MPCharacterIsWhitespace(unichar character);
 BOOL MPCharacterIsNewline(unichar character);
-BOOL MPStringIsNewline(NSString *str);
 
 NSString *MPStylePathForName(NSString *name);
 NSString *MPThemePathForName(NSString *name);
@@ -39,8 +38,9 @@ NSDictionary *MPGetDataMap(NSString *name);
 id MPGetObjectFromJavaScript(NSString *code, NSString *variableName);
 
 
-static void (^MPDocumentOpenCompletionEmpty)(
-        NSDocument *doc, BOOL wasOpen, NSError *error) = ^(
-        NSDocument *doc, BOOL wasOpen, NSError *error) {
+@class NSDocument;
+typedef void (^MPDocumentOpenCompletionHandler)(
+    NSDocument *doc, BOOL wasOpen, NSError *error
+);
 
-};
+MPDocumentOpenCompletionHandler MPDocumentOpenCompletionEmpty(void);

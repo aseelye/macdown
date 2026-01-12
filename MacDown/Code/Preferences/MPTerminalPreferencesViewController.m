@@ -40,6 +40,7 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
 @property (weak) IBOutlet NSButton *installUninstallButton;
 
 @property (nonatomic) NSURL *shellUtilityURL;
+@property (nonatomic, copy) NSString *commandInstallationPath;
 
 @end
 
@@ -91,9 +92,10 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
 {
     [super viewDidLoad];
     [self highlightMacdownInInfo];
-    
+
     self.installUninstallButton.target = self;
     self.shellUtilityURL = nil;
+    self.commandInstallationPath = MPCommandInstallationPath;
 }
 
 - (void)viewWillAppear
@@ -127,18 +129,29 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
 {
     __weak MPTerminalPreferencesViewController *weakSelf = self;
     MPDetectHomebrewPrefixWithCompletionhandler(^(NSString *output) {
-        NSString *macdownPath = MPCommandInstallationPath;
+        NSString *preferredPath = MPCommandInstallationPath;
         if (output)
         {
             NSCharacterSet *padding =
                 [NSCharacterSet whitespaceAndNewlineCharacterSet];
             NSString *prefix = [output stringByTrimmingCharactersInSet:padding];
-            macdownPath =
-                [prefix stringByAppendingPathComponent:@"bin/macdown"];
+            preferredPath = [prefix stringByAppendingPathComponent:@"bin/macdown"];
         }
 
-        if ([[NSFileManager defaultManager] fileExistsAtPath:macdownPath])
-            weakSelf.shellUtilityURL = [NSURL fileURLWithPath:macdownPath];
+        weakSelf.commandInstallationPath = preferredPath;
+
+        NSFileManager *fm = [NSFileManager defaultManager];
+        if ([fm fileExistsAtPath:preferredPath])
+        {
+            weakSelf.shellUtilityURL = [NSURL fileURLWithPath:preferredPath];
+            return;
+        }
+        if (![preferredPath isEqualToString:MPCommandInstallationPath]
+            && [fm fileExistsAtPath:MPCommandInstallationPath])
+        {
+            weakSelf.commandInstallationPath = MPCommandInstallationPath;
+            weakSelf.shellUtilityURL = [NSURL fileURLWithPath:MPCommandInstallationPath];
+        }
     });
 }
 
@@ -152,11 +165,21 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
     NSFileManager *fm = [NSFileManager defaultManager];
     if ([fm fileExistsAtPath:utilityBundlePath])
     {
-        BOOL ok = [fm createSymbolicLinkAtPath:MPCommandInstallationPath
-                           withDestinationPath:utilityBundlePath error:NULL];
+        NSString *installPath = self.commandInstallationPath ?: MPCommandInstallationPath;
+        NSError *error = nil;
+        BOOL ok = [fm createSymbolicLinkAtPath:installPath
+                           withDestinationPath:utilityBundlePath error:&error];
         if (ok)
             [self lookForShellUtility];
-        // TODO: Handle install failure.
+        else
+        {
+            NSAlert *alert = [[NSAlert alloc] init];
+            alert.messageText = NSLocalizedString(
+                @"Could not install shell utility.",
+                @"Terminal preferences install error title");
+            alert.informativeText = error.localizedDescription ?: @"";
+            [alert runModal];
+        }
     }
 }
 
@@ -165,10 +188,19 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
     NSURL *url = self.shellUtilityURL;
     if (!url)
         return;
-    BOOL ok = [[NSFileManager defaultManager] removeItemAtURL:url error:NULL];
+    NSError *error = nil;
+    BOOL ok = [[NSFileManager defaultManager] removeItemAtURL:url error:&error];
     if (ok)
         self.shellUtilityURL = nil;
-    // TODO: Handle removal failure.
+    else
+    {
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = NSLocalizedString(
+            @"Could not uninstall shell utility.",
+            @"Terminal preferences uninstall error title");
+        alert.informativeText = error.localizedDescription ?: @"";
+        [alert runModal];
+    }
 }
 
 /**
@@ -179,22 +211,22 @@ NS_INLINE NSColor *MPGetInstallationIndicatorColor(BOOL installed)
     NSString *infoString = self.infoTextField.stringValue;
     NSMutableAttributedString *attributedInfoString =
         [[NSMutableAttributedString alloc] initWithString:infoString];
-    
+
     NSRange searchRange = NSMakeRange(0, infoString.length);
     CGFloat infoFontSize = self.infoTextField.font.pointSize;
     NSFont *highlightFont = [NSFont fontWithName:@"Menlo" size:infoFontSize];
-    
+
     while (searchRange.location < infoString.length)
     {
         searchRange.length = infoString.length - searchRange.location;
         NSRange foundRange =
             [infoString rangeOfString:@"macdown"
                               options:NSLiteralSearch range:searchRange];
-        
+
         if (foundRange.location != NSNotFound)
         {
             [attributedInfoString addAttribute:NSFontAttributeName value:highlightFont range:foundRange];
-            
+
             searchRange.location = foundRange.location + foundRange.length;
         }
         else // Found all occurences

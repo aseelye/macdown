@@ -14,6 +14,7 @@
 #import "NSDocumentController+Document.h"
 #import "NSUserDefaults+Suite.h"
 #import "MPPreferences.h"
+#import "MPWebKitWorkarounds.h"
 #import "MPGeneralPreferencesViewController.h"
 #import "MPMarkdownPreferencesViewController.h"
 #import "MPEditorPreferencesViewController.h"
@@ -50,7 +51,7 @@ NS_INLINE void MPOpenBundledFile(NSString *resource, NSString *extension)
      }];
 }
 
-NS_INLINE void treat()
+NS_INLINE void MPShowTreatIfNeeded(void)
 {
     NSDictionary *info = MPGetDataMap(@"treats");
     NSString *name = info[@"name"];
@@ -86,7 +87,7 @@ NS_INLINE void treat()
     NSDocumentController *c = [NSDocumentController sharedDocumentController];
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         [c openDocumentWithContentsOfURL:url display:YES
-                       completionHandler:MPDocumentOpenCompletionEmpty];
+                       completionHandler:MPDocumentOpenCompletionEmpty()];
     }];
 }
 
@@ -102,21 +103,7 @@ NS_INLINE void treat()
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
-    // Using private API [WebCache setDisabled:YES] to disable WebView's cache
-    id webCacheClass = (id)NSClassFromString(@"WebCache");
-    if (webCacheClass) {
-// Ignoring "undeclared selector" warning
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wundeclared-selector"
-        BOOL setDisabledValue = YES;
-        NSMethodSignature *signature = [webCacheClass methodSignatureForSelector:@selector(setDisabled:)];
-        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
-        invocation.selector = @selector(setDisabled:);
-        invocation.target = [webCacheClass class];
-        [invocation setArgument:&setDisabledValue atIndex:2];
-        [invocation invoke];
-#pragma clang diagnostic pop
-    }
+    MPDisableLegacyWebViewCacheIfPossible();
     [[NSAppleEventManager sharedAppleEventManager]
         setEventHandler:self
             andSelector:@selector(openUrlSchemeAppleEvent:withReplyEvent:)
@@ -256,7 +243,7 @@ NS_INLINE void treat()
 {
     [self openPendingPipedContent];
     [self openPendingFiles];
-    treat();
+    MPShowTreatIfNeeded();
 }
 
 
@@ -319,7 +306,7 @@ NS_INLINE void treat()
         if ([url checkResourceIsReachableAndReturnError:NULL])
         {
             [c openDocumentWithContentsOfURL:url display:YES
-                           completionHandler:MPDocumentOpenCompletionEmpty];
+                           completionHandler:MPDocumentOpenCompletionEmpty()];
         }
         else
         {

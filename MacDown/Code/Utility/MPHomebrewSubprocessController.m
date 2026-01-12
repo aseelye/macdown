@@ -59,15 +59,25 @@
 
 - (void)runWithCompletionHandler:(void(^)(NSString *))handler
 {
-    self.completionHandler = handler;
+    if (handler)
+    {
+        self.completionHandler = ^(NSString *output) {
+            handler(output);
+            self.completionHandler = nil;
+        };
+    }
+    else
+    {
+        self.completionHandler = nil;
+    }
     @try
     {
         [self.task launch];
     }
     @catch (NSException *exception)     // Homebrew not installed.
     {
-        if (handler)
-            handler(nil);
+        if (self.completionHandler)
+            self.completionHandler(nil);
     }
 }
 
@@ -90,4 +100,3 @@ void MPDetectHomebrewPrefixWithCompletionhandler(void(^handler)(NSString *))
         [[MPHomebrewSubprocessController alloc] initWithArguments:args];
     [c runWithCompletionHandler:handler];
 }
-

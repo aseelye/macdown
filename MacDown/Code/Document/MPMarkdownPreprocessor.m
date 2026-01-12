@@ -200,20 +200,40 @@ NS_INLINE BOOL MPLineIsFencedCodeBlockMarker(NSString *line,
             continue;
 
         NSString *nextLine = lines[i + 1];
-        if (!MPLineIsTopLevelListItem(nextLine))
+        BOOL nextIsList = MPLineIsTopLevelListItem(nextLine);
+        BOOL nextIsFencedCodeBlockMarker =
+            MPLineIsFencedCodeBlockMarker(nextLine, 0, NULL);
+
+        if (!nextIsList && !nextIsFencedCodeBlockMarker)
             continue;
 
         BOOL shouldInsertBlankLine = NO;
-        if (MPLineIsAtxHeading(line))
-        {
-            shouldInsertBlankLine = YES;
-        }
-        else if (i > 0 && MPLineIsSetextHeadingUnderline(line, NULL))
+        NSString *trimmed =
+            [line stringByTrimmingCharactersInSet:
+                [NSCharacterSet whitespaceCharacterSet]];
+        if (!trimmed.length)
+            continue;
+
+        // Avoid inserting between list items.
+        if (MPLineIsTopLevelListItem(line))
+            continue;
+
+        // Only treat setext underline lines as headings if they actually
+        // underline a non-blank previous line; otherwise it might be a thematic
+        // break and doesn't need special handling.
+        if (i > 0 && MPLineIsSetextHeadingUnderline(line, NULL))
         {
             NSString *previousLine = lines[i - 1];
-            shouldInsertBlankLine =
-                [[previousLine stringByTrimmingCharactersInSet:
-                    [NSCharacterSet whitespaceCharacterSet]] length] > 0;
+            NSString *previousTrimmed =
+                [previousLine stringByTrimmingCharactersInSet:
+                    [NSCharacterSet whitespaceCharacterSet]];
+            shouldInsertBlankLine = previousTrimmed.length > 0;
+        }
+        else
+        {
+            // Hoedown requires a blank line between many block types and a
+            // following top-level list/code fence to parse correctly.
+            shouldInsertBlankLine = YES;
         }
 
         if (!shouldInsertBlankLine)

@@ -47,10 +47,10 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender {
     NSPasteboard *pboard;
     NSDragOperation sourceDragMask;
-    
+
     sourceDragMask = [sender draggingSourceOperationMask];
     pboard = [sender draggingPasteboard];
-    
+
     if ([pboard canReadItemWithDataConformingToTypes:[NSArray arrayWithObjects:@"public.jpeg", nil]]) {
         if (sourceDragMask & NSDragOperationLink) {
             return NSDragOperationLink;
@@ -58,20 +58,20 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
             return NSDragOperationCopy;
         }
     }
-    
+
     return NSDragOperationNone;
 }
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
     NSPasteboard *pboard;
     NSDragOperation sourceDragMask;
-    
+
     sourceDragMask = [sender draggingSourceOperationMask];
     pboard = [sender draggingPasteboard];
-    
+
     if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
         NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
-        
+
         /* Load data of file. */
         NSError *error;
         NSData *fileData = [NSData dataWithContentsOfFile: files[0]
@@ -79,8 +79,8 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
                                                     error: &error];
         if (!error) {
             // convert to base64 representation
-            NSString *dataString = [fileData base64Encoding];
-            
+            NSString *dataString = [fileData base64EncodedStringWithOptions:0];
+
             // insert into text.
             NSInteger insertionPoint = [[[self selectedRanges] objectAtIndex:0] rangeValue].location;
             [self setString:[NSString stringWithFormat:@"%@![](data:image/jpeg;base64,%@)%@", [[self string] substringToIndex:insertionPoint], dataString, [[self string] substringFromIndex:insertionPoint]]];

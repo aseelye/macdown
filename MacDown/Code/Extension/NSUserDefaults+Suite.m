@@ -21,11 +21,11 @@
 
 - (id)objectForKey:(NSString *)key inSuiteNamed:(NSString *)suiteName
 {
-    id value = (__bridge id)CFPreferencesCopyValue(
-                           (__bridge CFStringRef)key,
-                           (__bridge CFStringRef)suiteName,
-                           kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    return value;
+    CFPropertyListRef value = CFPreferencesCopyValue(
+        (__bridge CFStringRef)key,
+        (__bridge CFStringRef)suiteName,
+        kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    return CFBridgingRelease(value);
 }
 
 - (void)setObject:(id)value forKey:(NSString *)key
@@ -35,6 +35,9 @@
                           (__bridge CFPropertyListRef)value,
                           (__bridge CFStringRef)suiteName,
                           kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    CFPreferencesSynchronize((__bridge CFStringRef)suiteName,
+                             kCFPreferencesCurrentUser,
+                             kCFPreferencesAnyHost);
 }
 
 @end
