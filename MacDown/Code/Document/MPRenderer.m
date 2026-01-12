@@ -18,6 +18,7 @@
 #import "MPUtilities.h"
 #import "MPAsset.h"
 #import "MPPreferences.h"
+#import "MPMarkdownPreprocessor.h"
 
 // Warning: If the version of MathJax is ever updated, please check the status
 // of https://github.com/mathjax/MathJax/issues/548. If the fix has been merged
@@ -583,7 +584,8 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     }
 }
 
-- (void)parseMarkdown:(NSString *)markdown {
+- (void)parseMarkdown:(NSString *)markdown
+{
     [self.currentLanguages removeAllObjects];
     
     id<MPRendererDelegate> delegate = self.delegate;
@@ -599,6 +601,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         frontMatter = [markdown frontMatter:&offset];
         markdown = [markdown substringFromIndex:offset];
     }
+    markdown = [MPMarkdownPreprocessor markdownForRenderingFromMarkdown:markdown];
     hoedown_renderer *htmlRenderer = MPCreateHTMLRenderer(self);
     hoedown_renderer *tocRenderer = NULL;
     if (hasTOC)

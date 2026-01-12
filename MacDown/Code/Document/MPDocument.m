@@ -13,7 +13,6 @@
 #import "hoedown_html_patch.h"
 #import "HGMarkdownHighlighter.h"
 #import "MPUtilities.h"
-#import "MPAutosaving.h"
 #import "NSColor+HTML.h"
 #import "NSDocumentController+Document.h"
 #import "NSPasteboard+Types.h"
@@ -175,7 +174,7 @@ NS_INLINE NSColor *MPGetWebViewBackgroundColor(WebView *webview)
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101100
      WebEditingDelegate, WebFrameLoadDelegate, WebPolicyDelegate, WebResourceLoadDelegate,
 #endif
-     MPAutosaving, MPRendererDataSource, MPRendererDelegate>
+     MPRendererDataSource, MPRendererDelegate>
 
 typedef NS_ENUM(NSUInteger, MPWordCountType) {
     MPWordCountTypeWord,
@@ -191,7 +190,6 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (weak) IBOutlet WebView *preview;
 @property (weak) IBOutlet NSPopUpButton *wordCountWidget;
 @property (strong) IBOutlet MPToolbarController *toolbarController;
-@property (copy, nonatomic) NSString *autosaveName;
 @property (strong) HGMarkdownHighlighter *highlighter;
 @property (strong) MPRenderer *renderer;
 @property CGFloat previousSplitRatio;
@@ -329,12 +327,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
                             usingPluralRule:rule localizeNumeral:NO];
 }
 
-- (void)setAutosaveName:(NSString *)autosaveName
-{
-    _autosaveName = autosaveName;
-    self.splitView.autosaveName = autosaveName;
-}
-
 
 #pragma mark - Override
 
@@ -363,15 +355,15 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
     // All files use their absolute path to keep their window states.
-    NSString *autosaveName = kMPDefaultAutosaveName;
+    NSString *windowStateName = kMPDefaultAutosaveName;
     if (self.fileURL)
-        autosaveName = self.fileURL.absoluteString;
-    controller.window.frameAutosaveName = autosaveName;
-    self.autosaveName = autosaveName;
+        windowStateName = self.fileURL.absoluteString;
+    controller.window.frameAutosaveName = windowStateName;
+    self.splitView.autosaveName = windowStateName;
 
     // Perform initial resizing manually because for some reason untitled
     // documents do not pick up the autosaved frame automatically in 10.10.
-    NSString *rectString = MPRectStringForAutosaveName(autosaveName);
+    NSString *rectString = MPRectStringForAutosaveName(windowStateName);
     if (!rectString)
         rectString = MPRectStringForAutosaveName(kMPDefaultAutosaveName);
     if (rectString)
@@ -501,7 +493,10 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 + (BOOL)autosavesInPlace
 {
-    return YES;
+    // Intentional: Only write document contents to disk on explicit user save.
+    // This prevents background autosave from modifying the original file while
+    // the user is editing.
+    return NO;
 }
 
 + (NSArray *)writableTypes
