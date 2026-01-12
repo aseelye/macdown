@@ -1,7 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 import os
+import shlex
 import subprocess
 
 
@@ -16,15 +16,25 @@ class CommandError(Exception):
     pass
 
 
-def execute(*args):
-    proc = subprocess.Popen(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+def execute(*args, cwd=None):
+    proc = subprocess.run(
+        args,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding='utf-8',
     )
-    stdout, stderr = map(lambda s: s.decode('utf-8'), proc.communicate())
     if proc.returncode:
+        if hasattr(shlex, 'join'):
+            cmd = shlex.join(args)
+        else:
+            cmd = ' '.join(map(str, args))
         raise CommandError(
             '"{cmd}" failed with error {code}.\n {output}'.format(
-                cmd=' '.join(args), code=proc.returncode, output=stderr
+                cmd=cmd,
+                code=proc.returncode,
+                output=proc.stderr,
             )
         )
-    return stdout
+    return proc.stdout

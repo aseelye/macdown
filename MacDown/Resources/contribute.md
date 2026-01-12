@@ -14,9 +14,7 @@ Here you can get the source code, read through the issues and start contributing
 
 ## But, I am not a Coder
 
-Contribution is not limited to software developers, since there are other ways you can help. For example, contributing towards documentation, translation and support. Join the room on Gitter to see how you can help (see below).
-
-If you want to help translate, then you can look at our project page on [Transifex](https://www.transifex.com/macdown/macdown/) and see whether to add a new languages or complete the work of an existing language.
+Contribution is not limited to software developers. You can also help by improving documentation, reporting bugs, and helping other users in support channels (see below).
 
 ## Joining the Conversation
 
@@ -29,4 +27,3 @@ Join the room, introduce yourself and find out how you can help out.
 ## License
 
 MacDown is released under the terms of MIT License. For more details take a look at the [README](https://github.com/MacDownApp/macdown/blob/master/README.md).
-

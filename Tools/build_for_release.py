@@ -1,23 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+#!/usr/bin/env python3
 
 import argparse
 import os
+import plistlib
 import re
 import shutil
+import subprocess
 import zipfile
 
-from xml.etree import ElementTree
-
 from macdown_utils import ROOT_DIR, XCODEBUILD, execute
-
-
-try:
-    input = raw_input
-except NameError:   # Python 3 does not have raw_input.
-    pass
 
 
 OPENSSL = '/usr/bin/openssl'
@@ -27,29 +18,31 @@ BUILD_DIR = os.path.join(ROOT_DIR, 'Build')
 APP_NAME = 'MacDown.app'
 ZIP_NAME = 'MacDown.app.zip'
 
-TERM_ENCODING = 'utf-8'
-
 
 def print_value(key, value):
-    print('{key}:\n{value}\n'.format(key=key, value=value))
+    print(f'{key}:\n{value}\n')
 
 
-def archive_dir(zip_f, directory):
+def archive_dir(zip_f, root_dir, directory):
     contents = os.listdir(directory)
     if not contents:    # Empty directory.
-        info = zipfile.ZipInfo(directory)
+        archive_name = os.path.relpath(directory, root_dir)
+        if not archive_name.endswith('/'):
+            archive_name += '/'
+        info = zipfile.ZipInfo(archive_name)
         zip_f.writestr(info, '')
     for item in contents:
         full_path = os.path.join(directory, item)
+        archive_name = os.path.relpath(full_path, root_dir)
         if os.path.islink(full_path):
-            info = zipfile.ZipInfo(full_path)
+            info = zipfile.ZipInfo(archive_name)
             info.create_system = 3
             info.external_attr = 2716663808
             zip_f.writestr(info, os.readlink(full_path))
         elif os.path.isdir(full_path):
-            archive_dir(zip_f, full_path)
+            archive_dir(zip_f, root_dir, full_path)
         else:
-            zip_f.write(full_path)
+            zip_f.write(full_path, arcname=archive_name)
 
 
 def parse_args(argv):
@@ -58,51 +51,55 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
+def main(argv=None):
     options = parse_args(argv)
     cert_path = options.path_to_pem
+    if not os.path.isfile(cert_path):
+        raise SystemExit('Certificate file not found: {}'.format(cert_path))
+    cert_path = os.path.abspath(cert_path)
+    workspace_path = os.path.join(ROOT_DIR, 'MacDown.xcworkspace')
 
     print('Pre-build cleaning...')
-    if os.path.exists(BUILD_DIR):
-        try:
-            shutil.rmtree(BUILD_DIR)
-        except OSError:
-            pass
-    if not os.path.exists(BUILD_DIR):
-        os.mkdir(BUILD_DIR)
+    shutil.rmtree(BUILD_DIR, ignore_errors=True)
+    os.makedirs(BUILD_DIR, exist_ok=True)
     execute(
-        XCODEBUILD, 'clean', '-workspace', 'MacDown.xcworkspace',
+        XCODEBUILD, 'clean', '-workspace', workspace_path,
         '-scheme', 'MacDown',
+        cwd=ROOT_DIR,
     )
 
     print('Running external scripts...')
-    os.chdir(os.path.join(ROOT_DIR, 'Dependency', 'peg-markdown-highlight'))
-    execute('make')
+    execute(
+        'make',
+        cwd=os.path.join(ROOT_DIR, 'Dependency', 'peg-markdown-highlight'),
+    )
 
     print('Building application archive...')
-    os.chdir(BUILD_DIR)
     output = execute(
-        XCODEBUILD, 'archive', '-workspace', '../MacDown.xcworkspace',
+        XCODEBUILD, 'archive', '-workspace', workspace_path,
         '-scheme', 'MacDown',
+        cwd=BUILD_DIR,
     )
-    if isinstance(output, bytes):
-        output = output.decode(TERM_ENCODING)
     match = re.search(
         r'^\s*ARCHIVE_PATH: (.+)$',
         output,
         re.MULTILINE,
     )
+    if not match:
+        raise RuntimeError('Could not find ARCHIVE_PATH in xcodebuild output.')
     archive_path = match.group(1)
 
     print('Exporting application bundle...')
     source_app_path = os.path.join(
         archive_path, 'Products', 'Applications', APP_NAME,
     )
-    shutil.copytree(source_app_path, APP_NAME)
+    exported_app_path = os.path.join(BUILD_DIR, APP_NAME)
+    shutil.copytree(source_app_path, exported_app_path)
 
     # Zip.
-    with zipfile.ZipFile(ZIP_NAME, 'w') as f:
-        archive_dir(f, APP_NAME)
+    zip_path = os.path.join(BUILD_DIR, ZIP_NAME)
+    with zipfile.ZipFile(zip_path, 'w') as f:
+        archive_dir(f, BUILD_DIR, exported_app_path)
 
     input(
         'Build finished. Press Return to display bundle information and '
@@ -115,34 +112,30 @@ def main(argv):
         '{openssl} dgst -sha1 -binary < "{zip_name}" | '
         '{openssl} dgst -dss1 -sign "{cert}" | '
         '{openssl} enc -base64'
-    ).format(openssl=OPENSSL, zip_name=ZIP_NAME, cert=cert_path)
-    os.system(command)
+    ).format(openssl=OPENSSL, zip_name=zip_path, cert=cert_path)
+    try:
+        subprocess.run(command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        raise SystemExit(
+            'OpenSSL signature generation failed (exit {}).'.format(
+                e.returncode
+            )
+        )
     print()
 
-    print_value('Archive size', os.path.getsize(ZIP_NAME))
+    print_value('Archive size', os.path.getsize(zip_path))
 
-    with open(os.path.join(APP_NAME, 'Contents', 'Info.plist')) as plist:
-        tree = ElementTree.parse(plist)
-        root = tree.getroot()
-        for infodict in root:
-            has_key = None
-            for child in infodict:
-                if has_key == 'CFBundleVersion':
-                    bundle_version = child.text
-                    has_key = None
-                elif has_key == 'CFBundleShortVersionString':
-                    short_version = child.text
-                    has_key = None
-                elif child.tag == 'key':
-                    has_key = child.text
-    print_value('Bundle version', bundle_version)
-    print_value('Short version', short_version)
+    info_plist_path = os.path.join(exported_app_path, 'Contents', 'Info.plist')
+    with open(info_plist_path, 'rb') as plist_file:
+        info = plistlib.load(plist_file)
+    print_value('Bundle version', info.get('CFBundleVersion'))
+    print_value('Short version', info.get('CFBundleShortVersionString'))
 
     script = 'tell application "Finder" to reveal POSIX file "{zip}"'.format(
-        zip=os.path.abspath(ZIP_NAME)
+        zip=zip_path
     )
     execute(OSASCRIPT, '-e', script)
 
 
 if __name__ == '__main__':
-    main(None)
+    main()

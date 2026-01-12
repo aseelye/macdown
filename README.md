@@ -79,12 +79,6 @@ Refer to the official guides of Git and CocoaPods if you need more instructions.
     git submodule update
     bundle exec pod install
 
-### Translation
-
-Please help translation on [Transifex](https://www.transifex.com/macdown/macdown/).
-
-![Transifex translation percentage](https://www.transifex.com/projects/p/macdown/resource/macdownxliff/chart/image_png/)
-
 ## Discussion
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MacDownApp/macdown)
@@ -98,4 +92,3 @@ MacDown depends a lot on other open source projects, such as [Hoedown](https://g
 ## Tipping
 
 If you find MacDown suitable for your needs, please consider [giving me a tip through PayPal](http://macdown.uranusjr.com/faq/#donation). Or, if you prefer to buy me a drink *personally* instead, just [send me a tweet](https://twitter.com/uranusjr) when you visit [Taipei, Taiwan](http://en.wikipedia.org/wiki/Taipei), where I live. I look forward to meeting you!
-
