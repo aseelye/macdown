@@ -49,3 +49,23 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
+
+      - name: Test (MacDown)
+        run: |
+          xcodebuild \
+            test \
+            -workspace MacDown.xcworkspace \
+            -scheme MacDown \
+            -configuration Debug \
+            -destination 'platform=macOS,arch=arm64' \
+            -resultBundlePath Build/TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Upload xcresult (failure)
+        if: failure() && hashFiles('Build/TestResults.xcresult/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults.xcresult
+          path: Build/TestResults.xcresult
+          retention-days: 14
