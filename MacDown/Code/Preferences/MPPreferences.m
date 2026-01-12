@@ -88,6 +88,26 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
 @dynamic extensionQuote;
 @dynamic extensionSmartyPants;
 
+- (BOOL)suppressesUntitledDocumentOnLaunch
+{
+    return self.supressesUntitledDocumentOnLaunch;
+}
+
+- (void)setSuppressesUntitledDocumentOnLaunch:(BOOL)value
+{
+    self.supressesUntitledDocumentOnLaunch = value;
+}
+
+- (BOOL)extensionStrikethrough
+{
+    return self.extensionStrikethough;
+}
+
+- (void)setExtensionStrikethrough:(BOOL)value
+{
+    self.extensionStrikethough = value;
+}
+
 @dynamic markdownManualRender;
 
 @dynamic editorAutoIncrementNumberedLists;

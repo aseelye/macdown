@@ -100,13 +100,6 @@ BOOL MPCharacterIsNewline(unichar character)
     return [newlines characterIsMember:character];
 }
 
-BOOL MPStringIsNewline(NSString *str)
-{
-    if (str.length != 1)
-        return NO;
-    return MPCharacterIsNewline([str characterAtIndex:0]);
-}
-
 NSString *MPStylePathForName(NSString *name)
 {
     if (!name)
@@ -212,3 +205,13 @@ id MPGetObjectFromJavaScript(NSString *code, NSString *variableName)
     return object;
 }
 
+MPDocumentOpenCompletionHandler MPDocumentOpenCompletionEmpty(void)
+{
+    static MPDocumentOpenCompletionHandler handler = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        handler = ^(NSDocument *doc, BOOL wasOpen, NSError *error) {
+        };
+    });
+    return handler;
+}

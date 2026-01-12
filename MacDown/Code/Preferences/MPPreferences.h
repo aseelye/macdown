@@ -20,6 +20,9 @@ extern NSString * const MPDidDetectFreshInstallationNotification;
 @property (assign) BOOL supressesUntitledDocumentOnLaunch;
 @property (assign) BOOL createFileForLinkTarget;
 
+// Spelling-correct aliases.
+@property (assign) BOOL suppressesUntitledDocumentOnLaunch;
+
 // Extension flags.
 @property (assign) BOOL extensionIntraEmphasis;
 @property (assign) BOOL extensionTables;
@@ -32,6 +35,9 @@ extern NSString * const MPDidDetectFreshInstallationNotification;
 @property (assign) BOOL extensionFootnotes;
 @property (assign) BOOL extensionQuote;
 @property (assign) BOOL extensionSmartyPants;
+
+// Spelling-correct aliases.
+@property (assign) BOOL extensionStrikethrough;
 
 @property (assign) BOOL markdownManualRender;
 

@@ -12,6 +12,11 @@
 #import "MPUtilities.h"
 
 
+@interface MPPlugInController ()
+@property (copy) NSArray<MPPlugIn *> *plugIns;
+@end
+
+
 @implementation MPPlugInController
 
 - (instancetype)init
@@ -20,9 +25,11 @@
     if (!self)
         return nil;
 
+    self.plugIns = [self buildPlugIns];
+
     id q = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
     dispatch_async(q, ^{
-        for (MPPlugIn *plugin in [self buildPlugIns])
+        for (MPPlugIn *plugin in self.plugIns)
             [plugin plugInDidInitialize];
     });
     return self;
@@ -34,7 +41,7 @@
 - (void)menuNeedsUpdate:(NSMenu *)menu
 {
     [menu removeAllItems];
-    for (MPPlugIn *plugin in [self buildPlugIns])
+    for (MPPlugIn *plugin in self.plugIns)
     {
         NSMenuItem *item = [menu addItemWithTitle:plugin.name
                                            action:@selector(invokePlugIn:)

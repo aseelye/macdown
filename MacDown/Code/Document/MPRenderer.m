@@ -141,13 +141,40 @@ NS_INLINE NSString *MPHTMLFromMarkdown(
     }
     if (frontMatter)
         result = [NSString stringWithFormat:@"%@\n%@", frontMatter, result];
-    
+
     return result;
+}
+
+NS_INLINE NSString *MPTemplateStringForName(NSString *templateName)
+{
+    if (!templateName.length)
+        templateName = @"Default";
+
+    static NSCache *cache = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        cache = [[NSCache alloc] init];
+    });
+
+    NSString *templateString = [cache objectForKey:templateName];
+    if (templateString)
+        return templateString;
+
+    NSBundle *bundle = [NSBundle mainBundle];
+    NSURL *url = [bundle URLForResource:templateName
+                          withExtension:@"handlebars"
+                           subdirectory:@"Templates"];
+    templateString = [NSString stringWithContentsOfURL:url
+                                              encoding:NSUTF8StringEncoding
+                                                 error:NULL];
+    if (templateString)
+        [cache setObject:templateString forKey:templateName];
+    return templateString;
 }
 
 NS_INLINE NSString *MPGetHTML(
     NSString *title, NSString *body, NSArray *styles, MPAssetOption styleopt,
-    NSArray *scripts, MPAssetOption scriptopt)
+    NSArray *scripts, MPAssetOption scriptopt, NSString *templateName)
 {
     NSMutableArray *styleTags = [NSMutableArray array];
     NSMutableArray *scriptTags = [NSMutableArray array];
@@ -164,18 +191,7 @@ NS_INLINE NSString *MPGetHTML(
             [scriptTags addObject:s];
     }
 
-    MPPreferences *preferences = [MPPreferences sharedInstance];
-
-    static NSString *f = nil;
-    static dispatch_once_t token;
-    dispatch_once(&token, ^{
-        NSBundle *bundle = [NSBundle mainBundle];
-        NSURL *url = [bundle URLForResource:preferences.htmlTemplateName
-                              withExtension:@".handlebars"
-                               subdirectory:@"Templates"];
-        f = [NSString stringWithContentsOfURL:url
-                                     encoding:NSUTF8StringEncoding error:NULL];
-    });
+    NSString *f = MPTemplateStringForName(templateName);
     NSCAssert(f.length, @"Could not read template");
 
     NSString *titleTag = @"";
@@ -200,7 +216,6 @@ NS_INLINE BOOL MPAreNilableStringsEqual(NSString *s1, NSString *s2)
     return ([s1 isEqualToString:s2] || s1 == s2);
 }
 
-
 @interface MPRenderer ()
 
 @property (strong) NSMutableArray *currentLanguages;
@@ -214,7 +229,9 @@ NS_INLINE BOOL MPAreNilableStringsEqual(NSString *s1, NSString *s2)
 @property (readonly) NSArray *stylesheets;
 @property (readonly) NSArray *scripts;
 @property (copy) NSString *currentHtml;
+@property (copy) NSString *templateName;
 @property (strong) NSOperationQueue *parseQueue;
+@property (atomic) NSUInteger renderGeneration;
 @property int extensions;
 @property BOOL smartypants;
 @property BOOL TOC;
@@ -253,7 +270,7 @@ NS_INLINE void add_to_languages(
     }
     else if (require)
     {
-        NSLog(@"Unknown Prism langauge requirement "
+        NSLog(@"Unknown Prism language requirement "
               @"%@ dropped for unknown format", require);
     }
 }
@@ -301,7 +318,7 @@ NS_INLINE hoedown_buffer *language_addition(
 
     // Walk dependencies to include all required scripts.
     add_to_languages(lang, renderer.currentLanguages, languageMap);
-    
+
     return mapped;
 }
 
@@ -312,7 +329,7 @@ NS_INLINE hoedown_renderer *MPCreateHTMLRenderer(MPRenderer *renderer)
         flags, kMPRendererTOCLevel);
     htmlRenderer->blockcode = hoedown_patch_render_blockcode;
     htmlRenderer->listitem = hoedown_patch_render_listitem;
-    
+
     hoedown_html_renderer_state_extra *extra =
         hoedown_malloc(sizeof(hoedown_html_renderer_state_extra));
     extra->language_addition = language_addition;
@@ -438,10 +455,10 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 - (NSArray *)mermaidStylesheets
 {
     NSMutableArray *stylesheets = [NSMutableArray array];
-    
+
     NSURL *url = MPExtensionURL(@"mermaid.forest", @"css");
     [stylesheets addObject:[MPStyleSheet CSSWithURL:url]];
-    
+
     return stylesheets;
 }
 
@@ -458,7 +475,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         NSURL *url = MPExtensionURL(@"mermaid.init", @"js");
         [scripts addObject:[MPScript javaScriptWithURL:url]];
     }
-    
+
     return scripts;
 }
 
@@ -475,7 +492,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         NSURL *url = MPExtensionURL(@"viz.init", @"js");
         [scripts addObject:[MPScript javaScriptWithURL:url]];
     }
-    
+
     return scripts;
 }
 
@@ -492,7 +509,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         {
             [stylesheets addObjectsFromArray:self.mermaidStylesheets];
         }
-        
+
     }
 
     if ([delegate rendererCodeBlockAccesory:self] == MPCodeBlockAccessoryCustom)
@@ -532,34 +549,56 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 }
 
 #pragma mark - Public
-    
-- (void)parseAndRenderWithMaxDelay:(NSTimeInterval)maxDelay {
+
+- (void)parseAndRenderWithMaxDelay:(NSTimeInterval)maxDelay
+{
+    self.renderGeneration += 1;
+    NSUInteger generation = self.renderGeneration;
+
     [self.parseQueue cancelAllOperations];
     [self.parseQueue addOperationWithBlock:^{
-        // Fetch the markdown (from the main thread)
+        // Fetch the markdown (from the main thread).
         __block NSString *markdown;
         dispatch_sync(dispatch_get_main_queue(), ^{
             markdown = [[self.dataSource rendererMarkdown:self] copy];
         });
 
-        // Parse in backgound
+        // Parse in background.
         [self parseMarkdown:markdown];
-        
-        // Wait untils is renderer has finished loading OR until the maxDelay has passed
-        // This should result in overall faster update times
-        NSDate *start = [NSDate date];
-        __block BOOL rendererIsLoading = true;
-        while (rendererIsLoading || [start timeIntervalSinceNow] >= maxDelay) {
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                rendererIsLoading = [self.dataSource rendererLoading];
-            });
-        }
-        
-        // Render on main thread
+
+        CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self render];
+            [self scheduleRenderForGeneration:generation
+                                    maxDelay:maxDelay
+                                       start:start];
         });
     }];
+}
+
+- (void)scheduleRenderForGeneration:(NSUInteger)generation
+                          maxDelay:(NSTimeInterval)maxDelay
+                             start:(CFAbsoluteTime)start
+{
+    if (generation != self.renderGeneration)
+        return;
+
+    if (maxDelay > 0.0 && [self.dataSource rendererLoading])
+    {
+        CFAbsoluteTime elapsed = CFAbsoluteTimeGetCurrent() - start;
+        if (elapsed < maxDelay)
+        {
+            int64_t delay = (int64_t)(0.05 * NSEC_PER_SEC);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delay),
+                           dispatch_get_main_queue(), ^{
+                [self scheduleRenderForGeneration:generation
+                                        maxDelay:maxDelay
+                                           start:start];
+            });
+            return;
+        }
+    }
+
+    [self render];
 }
 
 - (void)parseAndRenderNow
@@ -572,6 +611,39 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     [self parseAndRenderWithMaxDelay:0.5];
 }
 
+- (void)parseAndRenderIfNeeded
+{
+    self.renderGeneration += 1;
+    NSUInteger generation = self.renderGeneration;
+
+    [self.parseQueue cancelAllOperations];
+    [self.parseQueue addOperationWithBlock:^{
+        __block NSString *markdown;
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            markdown = [[self.dataSource rendererMarkdown:self] copy];
+        });
+
+        id<MPRendererDelegate> delegate = self.delegate;
+        BOOL needsParse =
+            ([delegate rendererExtensions:self] != self.extensions
+             || [delegate rendererHasSmartyPants:self] != self.smartypants
+             || [delegate rendererRendersTOC:self] != self.TOC
+             || [delegate rendererDetectsFrontMatter:self] != self.frontMatter);
+
+        if (needsParse)
+            [self parseMarkdown:markdown];
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (generation != self.renderGeneration)
+                return;
+            if (needsParse)
+                [self render];
+            else
+                [self renderIfPreferencesChanged];
+        });
+    }];
+}
+
 - (void)parseIfPreferencesChanged
 {
     id<MPRendererDelegate> delegate = self.delegate;
@@ -580,20 +652,27 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
             || [delegate rendererRendersTOC:self] != self.TOC
             || [delegate rendererDetectsFrontMatter:self] != self.frontMatter)
     {
-        [self parseMarkdown:[self.dataSource rendererMarkdown:self]];
+        [self.parseQueue cancelAllOperations];
+        [self.parseQueue addOperationWithBlock:^{
+            __block NSString *markdown;
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                markdown = [[self.dataSource rendererMarkdown:self] copy];
+            });
+            [self parseMarkdown:markdown];
+        }];
     }
 }
 
 - (void)parseMarkdown:(NSString *)markdown
 {
     [self.currentLanguages removeAllObjects];
-    
+
     id<MPRendererDelegate> delegate = self.delegate;
     int extensions = [delegate rendererExtensions:self];
     BOOL smartypants = [delegate rendererHasSmartyPants:self];
     BOOL hasFrontMatter = [delegate rendererDetectsFrontMatter:self];
     BOOL hasTOC = [delegate rendererRendersTOC:self];
-    
+
     id frontMatter = nil;
     if (hasFrontMatter)
     {
@@ -605,14 +684,14 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     hoedown_renderer *htmlRenderer = MPCreateHTMLRenderer(self);
     hoedown_renderer *tocRenderer = NULL;
     if (hasTOC)
-    tocRenderer = MPCreateHTMLTOCRenderer();
+        tocRenderer = MPCreateHTMLTOCRenderer();
     self.currentHtml = MPHTMLFromMarkdown(
-                                          markdown, extensions, smartypants, [frontMatter HTMLTable],
-                                          htmlRenderer, tocRenderer);
+        markdown, extensions, smartypants, [frontMatter HTMLTable],
+        htmlRenderer, tocRenderer);
     if (tocRenderer)
-    hoedown_html_renderer_free(tocRenderer);
+        hoedown_html_renderer_free(tocRenderer);
     MPFreeHTMLRenderer(htmlRenderer);
-    
+
     self.extensions = extensions;
     self.smartypants = smartypants;
     self.TOC = hasTOC;
@@ -623,6 +702,8 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 {
     BOOL changed = NO;
     id<MPRendererDelegate> d = self.delegate;
+    if (!MPAreNilableStringsEqual([d rendererTemplateName:self], self.templateName))
+        changed = YES;
     if ([d rendererHasSyntaxHighlighting:self] != self.syntaxHighlighting)
         changed = YES;
     else if ([d rendererHasMermaid:self] != self.mermaid)
@@ -647,9 +728,10 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     id<MPRendererDelegate> delegate = self.delegate;
 
     NSString *title = [self.dataSource rendererHTMLTitle:self];
+    NSString *templateName = [delegate rendererTemplateName:self];
     NSString *html = MPGetHTML(
         title, self.currentHtml, self.stylesheets, MPAssetFullLink,
-        self.scripts, MPAssetFullLink);
+        self.scripts, MPAssetFullLink, templateName);
     [delegate renderer:self didProduceHTMLOutput:html];
 
     self.styleName = [delegate rendererStyleName:self];
@@ -658,6 +740,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     self.graphviz = [delegate rendererHasGraphviz:self];
     self.highlightingThemeName = [delegate rendererHighlightingThemeName:self];
     self.codeBlockAccesory = [delegate rendererCodeBlockAccesory:self];
+    self.templateName = templateName;
 }
 
 - (NSString *)HTMLForExportWithStyles:(BOOL)withStyles
@@ -699,8 +782,10 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     NSString *title = [self.dataSource rendererHTMLTitle:self];
     if (!title)
         title = @"";
+    NSString *templateName = [self.delegate rendererTemplateName:self];
     NSString *html = MPGetHTML(
-        title, self.currentHtml, styles, stylesOption, scripts, scriptsOption);
+        title, self.currentHtml, styles, stylesOption, scripts, scriptsOption,
+        templateName);
     return html;
 }
 

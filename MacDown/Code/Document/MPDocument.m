@@ -28,7 +28,9 @@
 #import "MPExportPanelAccessoryViewController.h"
 #import "MPMathJaxListener.h"
 #import "WebView+WebViewPrivateHeaders.h"
+#import "MPScrollSyncController.h"
 #import "MPToolbarController.h"
+#import "MPWebKitWorkarounds.h"
 #import <JavaScriptCore/JavaScriptCore.h>
 
 static NSString * const kMPDefaultAutosaveName = @"Untitled";
@@ -210,16 +212,14 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (nonatomic) BOOL needsToUnregister;
 @property (nonatomic) BOOL alreadyRenderingInWeb;
 @property (nonatomic) BOOL renderToWebPending;
-@property (strong) NSArray<NSNumber *> *webViewHeaderLocations;
-@property (strong) NSArray<NSNumber *> *editorHeaderLocations;
+@property (strong) MPScrollSyncController *scrollSyncController;
 @property (nonatomic) BOOL inLiveScroll;
 
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
 
 - (void)scaleWebview;
-- (void)syncScrollers;
--(void) updateHeaderLocations;
+- (void)handlePreviewLoadDidComplete;
 
 @end
 
@@ -236,8 +236,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         [weakObj scaleWebview];
         if (weakObj.preferences.editorSyncScrolling)
         {
-            [weakObj updateHeaderLocations];
-            [weakObj syncScrollers];
+            [weakObj.scrollSyncController updateHeaderLocations];
+            [weakObj.scrollSyncController syncScrollers];
         }
         else
         {
@@ -339,7 +339,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     self.isPreviewReady = NO;
     self.shouldHandleBoundsChange = YES;
     self.previousSplitRatio = -1.0;
-    
+
     return self;
 }
 
@@ -351,8 +351,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)windowControllerDidLoadNib:(NSWindowController *)controller
 {
     [super windowControllerDidLoadNib:controller];
-
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
     // All files use their absolute path to keep their window states.
     NSString *windowStateName = kMPDefaultAutosaveName;
@@ -376,50 +374,17 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     self.renderer.dataSource = self;
     self.renderer.delegate = self;
 
-    for (NSString *key in MPEditorPreferencesToObserve())
-    {
-        [defaults addObserver:self forKeyPath:key
-                      options:NSKeyValueObservingOptionNew context:NULL];
-    }
-    for (NSString *key in MPEditorKeysToObserve())
-    {
-        [self.editor addObserver:self forKeyPath:key
-                         options:NSKeyValueObservingOptionNew context:NULL];
-    }
-
     self.editor.postsFrameChangedNotifications = YES;
     self.preview.frameLoadDelegate = self;
     self.preview.policyDelegate = self;
     self.preview.editingDelegate = self;
     self.preview.resourceLoadDelegate = self;
 
-    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-    [center addObserver:self selector:@selector(editorTextDidChange:)
-                   name:NSTextDidChangeNotification object:self.editor];
-    [center addObserver:self selector:@selector(userDefaultsDidChange:)
-                   name:NSUserDefaultsDidChangeNotification
-                 object:[NSUserDefaults standardUserDefaults]];
-    [center addObserver:self selector:@selector(editorBoundsDidChange:)
-                   name:NSViewBoundsDidChangeNotification
-                 object:self.editor.enclosingScrollView.contentView];
-    [center addObserver:self selector:@selector(editorFrameDidChange:)
-                   name:NSViewFrameDidChangeNotification object:self.editor];
-    [center addObserver:self selector:@selector(didRequestEditorReload:)
-                   name:MPDidRequestEditorSetupNotification object:nil];
-    [center addObserver:self selector:@selector(didRequestPreviewReload:)
-                   name:MPDidRequestPreviewRenderNotification object:nil];
-    [center addObserver:self selector:@selector(willStartLiveScroll:)
-                   name:NSScrollViewWillStartLiveScrollNotification
-                 object:self.editor.enclosingScrollView];
-    [center addObserver:self selector:@selector(didEndLiveScroll:)
-                   name:NSScrollViewDidEndLiveScrollNotification
-                 object:self.editor.enclosingScrollView];
-    if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber10_9)
-    {
-        [center addObserver:self selector:@selector(previewDidLiveScroll:)
-                       name:NSScrollViewDidEndLiveScrollNotification
-                     object:self.preview.enclosingScrollView];
-    }
+    self.scrollSyncController =
+        [[MPScrollSyncController alloc] initWithEditor:self.editor
+                                               preview:self.preview];
+
+    [self registerObservers];
 
     self.needsToUnregister = YES;
 
@@ -464,7 +429,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)close
 {
-    if (self.needsToUnregister) 
+    if (self.needsToUnregister)
     {
         // Close can be called multiple times, but this can only be done once.
         // http://www.cocoabuilder.com/archive/cocoa/240166-nsdocument-close-method-calls-itself.html
@@ -478,17 +443,64 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         self.preview.frameLoadDelegate = nil;
         self.preview.policyDelegate = nil;
 
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-        for (NSString *key in MPEditorPreferencesToObserve())
-            [defaults removeObserver:self forKeyPath:key];
-        for (NSString *key in MPEditorKeysToObserve())
-            [self.editor removeObserver:self forKeyPath:key];
+        [self unregisterObservers];
     }
 
     [super close];
+}
+
+- (void)registerObservers
+{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    for (NSString *key in MPEditorPreferencesToObserve())
+    {
+        [defaults addObserver:self forKeyPath:key
+                      options:NSKeyValueObservingOptionNew context:NULL];
+    }
+    for (NSString *key in MPEditorKeysToObserve())
+    {
+        [self.editor addObserver:self forKeyPath:key
+                         options:NSKeyValueObservingOptionNew context:NULL];
+    }
+
+    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+    [center addObserver:self selector:@selector(editorTextDidChange:)
+                   name:NSTextDidChangeNotification object:self.editor];
+    [center addObserver:self selector:@selector(userDefaultsDidChange:)
+                   name:NSUserDefaultsDidChangeNotification
+                 object:[NSUserDefaults standardUserDefaults]];
+    [center addObserver:self selector:@selector(editorBoundsDidChange:)
+                   name:NSViewBoundsDidChangeNotification
+                 object:self.editor.enclosingScrollView.contentView];
+    [center addObserver:self selector:@selector(editorFrameDidChange:)
+                   name:NSViewFrameDidChangeNotification object:self.editor];
+    [center addObserver:self selector:@selector(didRequestEditorReload:)
+                   name:MPDidRequestEditorSetupNotification object:nil];
+    [center addObserver:self selector:@selector(didRequestPreviewReload:)
+                   name:MPDidRequestPreviewRenderNotification object:nil];
+    [center addObserver:self selector:@selector(willStartLiveScroll:)
+                   name:NSScrollViewWillStartLiveScrollNotification
+                 object:self.editor.enclosingScrollView];
+    [center addObserver:self selector:@selector(didEndLiveScroll:)
+                   name:NSScrollViewDidEndLiveScrollNotification
+                 object:self.editor.enclosingScrollView];
+    if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber10_9)
+    {
+        [center addObserver:self selector:@selector(previewDidLiveScroll:)
+                       name:NSScrollViewDidEndLiveScrollNotification
+                     object:self.preview.enclosingScrollView];
+    }
+}
+
+- (void)unregisterObservers
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    for (NSString *key in MPEditorPreferencesToObserve())
+        [defaults removeObserver:self forKeyPath:key];
+    for (NSString *key in MPEditorKeysToObserve())
+        [self.editor removeObserver:self forKeyPath:key];
 }
 
 + (BOOL)autosavesInPlace
@@ -576,7 +588,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
             savePanel.nameFieldStringValue = fileName;
         }
     }
-    
+
     // Get supported extensions from plist
     static NSMutableArray *supportedExtensions = nil;
     static dispatch_once_t onceToken;
@@ -592,10 +604,10 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
             }
         }
     });
-    
+
     savePanel.allowedFileTypes = supportedExtensions;
     savePanel.allowsOtherFileTypes = YES; // Allow all extensions.
-    
+
     return [super prepareSavePanel:savePanel];
 }
 
@@ -724,16 +736,18 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
                                           strikethroughEnabled:strikethrough])
             return NO;
     }
-    
-	// For every change, set the typing attributes
-	if (range.location > 0) {
-		NSRange prevRange = range;
-		prevRange.location -= 1;
-		prevRange.length = 1;
 
-		NSDictionary *attr = [[textView attributedString] fontAttributesInRange:prevRange];
-		[textView setTypingAttributes:attr];
-	}
+    // For every change, set the typing attributes.
+    if (range.location > 0)
+    {
+        NSRange prevRange = range;
+        prevRange.location -= 1;
+        prevRange.length = 1;
+
+        NSDictionary *attr =
+            [[textView attributedString] fontAttributesInRange:prevRange];
+        [textView setTypingAttributes:attr];
+    }
 
     return YES;
 }
@@ -829,16 +843,16 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (NSURLRequest *)webView:(WebView *)sender resource:(id)identifier willSendRequest:(NSURLRequest *)request redirectResponse:(NSURLResponse *)redirectResponse fromDataSource:(WebDataSource *)dataSource
 {
-    
+
     if ([[request.URL lastPathComponent] isEqualToString:@"MathJax.js"])
     {
         NSURLComponents *origComps = [NSURLComponents componentsWithURL:[request URL] resolvingAgainstBaseURL:YES];
         NSURLComponents *updatedComps = [NSURLComponents componentsWithURL:[[NSBundle mainBundle] URLForResource:@"MathJax" withExtension:@"js" subdirectory:@"MathJax"] resolvingAgainstBaseURL:NO];
         [updatedComps setQueryItems:[origComps queryItems]];
-        
+
         request = [NSURLRequest requestWithURL:[updatedComps URL]];
     }
-    
+
     return request;
 }
 
@@ -865,6 +879,17 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame
 {
+    [self handlePreviewLoadDidComplete];
+}
+
+- (void)webView:(WebView *)sender didFailLoadWithError:(NSError *)error
+       forFrame:(WebFrame *)frame
+{
+    [self handlePreviewLoadDidComplete];
+}
+
+- (void)handlePreviewLoadDidComplete
+{
     // If MathJax is on, the on-completion callback will be invoked by the
     // JavaScript handler injected in -webView:didCommitLoadForFrame:.
     if (!self.preferences.htmlMathJax)
@@ -876,27 +901,13 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
     self.isPreviewReady = YES;
 
-    // Update word count
     if (self.preferences.editorShowWordCount)
         [self updateWordCount];
-    
+
     self.alreadyRenderingInWeb = NO;
 
     if (self.renderToWebPending)
-        [self.renderer parseAndRenderNow];
-
-    self.renderToWebPending = NO;
-}
-
-- (void)webView:(WebView *)sender didFailLoadWithError:(NSError *)error
-       forFrame:(WebFrame *)frame
-{
-    [self webView:sender didFinishLoadForFrame:frame];
-    
-    self.alreadyRenderingInWeb = NO;
-
-    if (self.renderToWebPending)
-        [self.renderer parseAndRenderNow];
+        [self.renderer render];
 
     self.renderToWebPending = NO;
 }
@@ -963,10 +974,11 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 #pragma mark - MPRendererDataSource
 
-- (BOOL)rendererLoading {
-	return self.preview.loading;
+- (BOOL)rendererLoading
+{
+    return self.preview.loading;
 }
-    
+
 - (NSString *)rendererMarkdown:(MPRenderer *)renderer
 {
     return self.editor.string;
@@ -994,6 +1006,12 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (BOOL)rendererRendersTOC:(MPRenderer *)renderer
 {
     return self.preferences.htmlRendersTOC;
+}
+
+- (NSString *)rendererTemplateName:(MPRenderer *)renderer
+{
+    NSString *name = self.preferences.htmlTemplateName;
+    return name.length ? name : @"Default";
 }
 
 - (NSString *)rendererStyleName:(MPRenderer *)renderer
@@ -1043,10 +1061,10 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         self.renderToWebPending = YES;
         return;
     }
-    
+
     if (self.printing)
         return;
-    
+
     self.alreadyRenderingInWeb = YES;
 
     // Delayed copying for -copyHtml.
@@ -1135,8 +1153,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     }
     else
     {
-        [renderer parseIfPreferencesChanged];
-        [renderer renderIfPreferencesChanged];
+        [renderer parseAndRenderIfNeeded];
     }
 }
 
@@ -1148,7 +1165,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)willStartLiveScroll:(NSNotification *)notification
 {
-    [self updateHeaderLocations];
+    [self.scrollSyncController updateHeaderLocations];
     _inLiveScroll = YES;
 }
 
@@ -1166,11 +1183,12 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     {
         @synchronized(self) {
             self.shouldHandleBoundsChange = NO;
-            if(!_inLiveScroll){
-                [self updateHeaderLocations];
+            if (!self.inLiveScroll)
+            {
+                [self.scrollSyncController updateHeaderLocations];
             }
-            
-            [self syncScrollers];
+
+            [self.scrollSyncController syncScrollers];
             self.shouldHandleBoundsChange = YES;
         }
     }
@@ -1261,8 +1279,18 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         BOOL highlighting = controller.highlightingIncluded;
         NSString *html = [self.renderer HTMLForExportWithStyles:styles
                                                    highlighting:highlighting];
+        NSError *error = nil;
         [html writeToURL:panel.URL atomically:NO encoding:NSUTF8StringEncoding
-                   error:NULL];
+                   error:&error];
+        if (error)
+        {
+            NSAlert *alert = [[NSAlert alloc] init];
+            alert.messageText = NSLocalizedString(
+                @"Could not export HTML.",
+                @"HTML export error title");
+            alert.informativeText = error.localizedDescription ?: @"";
+            [alert runModal];
+        }
     }];
 }
 
@@ -1272,7 +1300,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     panel.allowedFileTypes = @[@"pdf"];
     if (self.presumedFileName)
         panel.nameFieldStringValue = self.presumedFileName;
-    
+
     NSWindow *w = nil;
     NSArray *windowControllers = self.windowControllers;
     if (windowControllers.count > 0)
@@ -1569,7 +1597,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
             layer.backgroundColor = backgroundCGColor;
         self.editorContainer.layer = layer;
     }
-    
+
     if ([changedKey isEqualToString:@"editorBaseFontInfo"])
     {
         [self scaleWebview];
@@ -1694,7 +1722,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
     static const CGFloat defaultSize = 14.0;
     CGFloat scale = fontSize / defaultSize;
-    
+
 #if 0
     // Sadly, this doesn’t work correctly.
     // It looks fine, but selections are offset relative to the mouse cursor.
@@ -1705,146 +1733,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     [previewContentView setNeedsDisplay:YES];
 #else
     // Warning: this is private webkit API and NOT App Store-safe!
-    [self.preview setPageSizeMultiplier:scale];
+    MPSetLegacyWebViewPageScaleMultiplier(self.preview, scale);
 #endif
-}
-
--(void) updateHeaderLocations
-{
-    CGFloat offset = NSMinY(self.preview.enclosingScrollView.contentView.bounds);
-    NSMutableArray<NSNumber *> *locations = [NSMutableArray array];
-
-    _webViewHeaderLocations = [[self.preview.mainFrame.javaScriptContext evaluateScript:@"var arr = Array.prototype.slice.call(document.querySelectorAll(\"h1, h2, h3, h4, h5, h6, img:only-child\")); arr.map(function(n){ return n.getBoundingClientRect().top })"] toArray];
-    
-    // add offset to all numbers
-    for (NSNumber *location in _webViewHeaderLocations)
-    {
-        [locations addObject:@([location floatValue] + offset)];
-    }
-    
-    _webViewHeaderLocations = [locations copy];
-    
-
-    // Next, cache the locations of all of the reference nodes in the editor view.
-    NSInteger characterCount = 0;
-    NSLayoutManager *layoutManager = [self.editor layoutManager];
-    NSArray<NSString *> *documentLines = [self.editor.string componentsSeparatedByString:@"\n"];
-    [locations removeAllObjects];
-
-    // These are the patterns for markdown headers and images respectively. we're only going to
-    // handle images that are not inline with other text/images
-    NSRegularExpression *dashRegex = [NSRegularExpression regularExpressionWithPattern:@"^([-]+)$" options:0 error:nil];
-    NSRegularExpression *headerRegex = [NSRegularExpression regularExpressionWithPattern:@"^(#+)\\s" options:0 error:nil];
-    NSRegularExpression *imgRegex = [NSRegularExpression regularExpressionWithPattern:@"^!\\[[^\\]]*\\]\\([^)]*\\)$" options:0 error:nil];
-    BOOL previousLineHadContent = NO;
-    
-    CGFloat editorContentHeight = ceilf(NSHeight(self.editor.enclosingScrollView.documentView.bounds));
-    CGFloat editorVisibleHeight = ceilf(NSHeight(self.editor.enclosingScrollView.contentView.bounds));
-
-    // We start by splitting our document into lines, and then searching
-    // line by line for headers or images.
-    for (NSInteger lineNumber = 0; lineNumber < [documentLines count]; lineNumber++)
-    {
-        NSString *line = documentLines[lineNumber];
-        
-        if ((previousLineHadContent && [dashRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])]) ||
-            [imgRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])] ||
-            [headerRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])])
-        {
-            // Calculate where this header/image appears vertically in the editor
-            NSRange glyphRange = [layoutManager glyphRangeForCharacterRange:NSMakeRange(characterCount, [line length]) actualCharacterRange:nil];
-            NSRect topRect = [layoutManager boundingRectForGlyphRange:glyphRange inTextContainer:[self.editor textContainer]];
-            CGFloat headerY = NSMidY(topRect);
-
-            if(headerY <= editorContentHeight - editorVisibleHeight){
-                [locations addObject:@(headerY)];
-            }
-        }
-        
-        previousLineHadContent = [line length] && ![dashRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])];
-        
-        characterCount += [line length] + 1;
-    }
-
-    _editorHeaderLocations = [locations copy];
-}
-
-- (void)syncScrollers
-{
-    CGFloat editorContentHeight = ceilf(NSHeight(self.editor.enclosingScrollView.documentView.bounds));
-    CGFloat editorVisibleHeight = ceilf(NSHeight(self.editor.enclosingScrollView.contentView.bounds));
-    CGFloat previewContentHeight = ceilf(NSHeight(self.preview.enclosingScrollView.documentView.bounds));
-    CGFloat previewVisibleHeight = ceilf(NSHeight(self.preview.enclosingScrollView.contentView.bounds));
-    NSInteger relativeHeaderIndex = -1; // -1 is start of document, before any other header
-    CGFloat currY = NSMinY(self.editor.enclosingScrollView.contentView.bounds);
-    CGFloat minY = 0;
-    CGFloat maxY = 0;
-    
-    // align the documents at the middle of the screen, except at top/bottom of document
-    CGFloat topTaper = MAX(0, MIN(1.0, currY / editorVisibleHeight));
-    CGFloat bottomTaper = 1.0 - MAX(0, MIN(1.0, (currY - editorContentHeight + 2 * editorVisibleHeight) / editorVisibleHeight));
-    CGFloat adjustmentForScroll = topTaper * bottomTaper * editorVisibleHeight / 2;
-
-    // We start by splitting our document into lines, and then searching
-    // line by line for headers or images.
-    for (NSNumber *headerYNum in _editorHeaderLocations) {
-        CGFloat headerY = [headerYNum floatValue];
-        headerY -= adjustmentForScroll;
-        
-        if (headerY < currY)
-        {
-            // The header is before our current scroll position. the closest
-            // of these will be our first reference node
-            relativeHeaderIndex += 1;
-            minY = headerY;
-        } else if (maxY == 0 && headerY < editorContentHeight - editorVisibleHeight)
-        {
-            // Skip any headers that are within the last screen of the editor.
-            // we'll interpolate to the end of the document in that case.
-            maxY = headerY;
-        }
-    }
-    
-    // Usually, we'll be scrolling between two reference nodes, but toward the end
-    // of the document we'll ignore nodes and reference the end of the document instead
-    BOOL interpolateToEndOfDocument = NO;
-    
-    if (maxY == 0)
-    {
-        // We only have a reference node before our current position,
-        // but not after, so we'll use the end of the document.
-        maxY = editorContentHeight - editorVisibleHeight + adjustmentForScroll;
-        interpolateToEndOfDocument = YES;
-    }
-
-    // We are currently at currY offset, between minY and maxY, which represent
-    // headers indexed by relativeHeaderIndex and relativeHeaderIndex+1.
-    currY = MAX(0, currY - minY);
-    maxY -= minY;
-    minY -= minY;
-    CGFloat percentScrolledBetweenHeaders = MAX(0, MIN(1.0, currY / maxY));
-    
-    // Now that we know where the editor position is relative to two reference nodes,
-    // we need to find the positions of those nodes in the HTML preview
-    CGFloat topHeaderY = 0;
-    CGFloat bottomHeaderY = previewContentHeight - previewVisibleHeight;
-    
-    // Find the Y positions in the preview window that we're scrolling between
-    if ([_webViewHeaderLocations count] > relativeHeaderIndex)
-    {
-        topHeaderY = floorf([_webViewHeaderLocations[relativeHeaderIndex] doubleValue]) - adjustmentForScroll;
-    }
-    
-    if (!interpolateToEndOfDocument && [_webViewHeaderLocations count] > relativeHeaderIndex + 1)
-    {
-        bottomHeaderY = ceilf([_webViewHeaderLocations[relativeHeaderIndex + 1] doubleValue]) - adjustmentForScroll;
-    }
-    
-    // Now we scroll percentScrolledBetweenHeaders percent between those two positions in the webview
-    CGFloat previewY = topHeaderY + (bottomHeaderY - topHeaderY) * percentScrolledBetweenHeaders;
-    NSRect contentBounds = self.preview.enclosingScrollView.contentView.bounds;
-    contentBounds.origin.y = previewY;
-    self.preview.enclosingScrollView.contentView.bounds = contentBounds;
 }
 
 - (void)setSplitViewDividerLocation:(CGFloat)ratio
@@ -1924,7 +1814,7 @@ current file somewhere to enable this feature.", \
     // Simply open the file if it is not local, or exists already.
     BOOL file = url.isFileURL;
     BOOL reachable = !file || [url checkResourceIsReachableAndReturnError:NULL];
-    
+
     // If the file is local but doesn't exist, check if a file with
     // the .md extension exists.
     if (file && !reachable && [url.pathExtension isEqualToString:@""])
@@ -1936,7 +1826,7 @@ current file somewhere to enable this feature.", \
             url = markdownURL;
         }
     }
-    
+
     if (reachable)
     {
         [[NSWorkspace sharedWorkspace] openURL:url];
