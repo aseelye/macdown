@@ -17,6 +17,8 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
+          bundler: "4.0.3"
+          bundler-cache: true
 
       - name: Cache CocoaPods
         uses: actions/cache@v4
@@ -29,13 +31,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Install CocoaPods
-        run: |
-          gem install cocoapods -v 1.16.2
-          pod --version
-
       - name: Install Pods
-        run: pod install --no-repo-update
+        run: |
+          bundle exec pod --version
+          bundle exec pod install --no-repo-update
 
       - name: Build vendored dependencies
         run: make -C Dependency/peg-markdown-highlight
