@@ -1,11 +1,9 @@
 osx_image: xcode10.1
 language: objective-c
 cache:
-- bundler
 - cocoapods
 install:
-- bundle install
-- travis_wait bundle exec pod install
+- travis_wait pod install --repo-update
 before_script:
 - set -o pipefail
 script:

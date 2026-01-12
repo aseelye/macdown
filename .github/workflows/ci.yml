@@ -35,7 +35,7 @@ jobs:
           pod --version
 
       - name: Install Pods
-        run: pod install --repo-update
+        run: pod install --no-repo-update
 
       - name: Build vendored dependencies
         run: make -C Dependency/peg-markdown-highlight
@@ -49,4 +49,3 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
-

@@ -49,11 +49,9 @@ The following editor themes and CSS files are extracted from [Mou](http://mouapp
 
 If you wish to build MacDown yourself, you will need the following components/tools:
 
-* OS X SDK (10.14 or later)
+* macOS SDK (10.15 or later)
 * Git
-* [Bundler](http://bundler.io)
-
-> Note: Old versions of CocoaPods are not supported. Please use Bundler to execute CocoaPods, or make sure your CocoaPods is later than shown in `Gemfile.lock`.
+* [CocoaPods](https://cocoapods.org) (`pod`)
 
 > Note: The Command Line Tools (CLT) should be unnecessary. If you failed to compile without it, please install CLT with
 >
@@ -68,8 +66,7 @@ An appropriate SDK should be bundled with Xcode 5 or later versions.
 After cloning the repository, run the following commands inside the repository root (directory containing this `README.md` file):
 
     git submodule update --init
-    bundle install
-    bundle exec pod install
+    pod install --repo-update
     make -C Dependency/peg-markdown-highlight
 
 and open `MacDown.xcworkspace` in Xcode. The first command initialises the dependency submodule(s) used in MacDown; the second one installs dependencies managed by CocoaPods.
@@ -77,7 +74,7 @@ and open `MacDown.xcworkspace` in Xcode. The first command initialises the depen
 Refer to the official guides of Git and CocoaPods if you need more instructions. If you run into build issues later on, try running the following commands to update dependencies:
 
     git submodule update
-    bundle exec pod install
+    pod install
 
 ## Discussion
 

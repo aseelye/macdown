@@ -17,8 +17,7 @@
 From the repo root:
 
 - `git submodule update --init`: fetch required submodules under `Dependency/`.
-- `bundle install`: install pinned Ruby tooling (notably CocoaPods) from `Gemfile.lock`.
-- `bundle exec pod install`: install/update Pods and generate the workspace.
+- `pod install --repo-update`: install/update Pods and generate the workspace.
 - `make -C Dependency/peg-markdown-highlight`: build the syntax highlighter dependency.
 - Open `MacDown.xcworkspace` in Xcode to build and run.
 
@@ -41,4 +40,3 @@ Command-line builds:
 
 - Commit messages: imperative subject line, keep it short (≤72 chars); add context in the body when needed.
 - Before opening a PR: rebase on `master` and keep changes focused. Include a clear description, link related issues, and add screenshots for UI/visual changes.
-
