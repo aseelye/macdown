@@ -1222,7 +1222,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nif [ -x \"$PROJECT_DIR/Tools/GitHub-style-generator/node_modules/.bin/node-sass\" ]; then\n  make -C \"$PROJECT_DIR/Tools/GitHub-style-generator/\"\nfi\n/usr/bin/touch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			shellScript = "set -e\nif [ -x \"$PROJECT_DIR/Tools/GitHub-style-generator/node_modules/.bin/sass\" ]; then\n  make -C \"$PROJECT_DIR/Tools/GitHub-style-generator/\"\nfi\n/usr/bin/touch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
