@@ -239,6 +239,11 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     return !self.preferences.supressesUntitledDocumentOnLaunch;
 }
 
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    return YES;
+}
+
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
     [self openPendingPipedContent];
