@@ -13,7 +13,7 @@ $(target): index.sass package-lock.json
 		exit 0; \
 	fi; \
 	$(NODE_SASS) --include-path node_modules $< > "$$tmp_sass"; \
-	sed s/.markdown-body/body/ "$$tmp_sass" > "$$tmp_out"; \
+	sed 's/\.markdown-body/body/g' "$$tmp_sass" > "$$tmp_out"; \
 	mv "$$tmp_out" "$@"; \
 	rm -f "$$tmp_sass"
 

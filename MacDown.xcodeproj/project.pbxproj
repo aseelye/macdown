@@ -1105,13 +1105,16 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/.git/HEAD",
+				"${SRCROOT}/.git/index",
 			);
 			name = "Update Build Number";
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/MacDown-build-number.stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "bash Tools/update_build_number.sh\n";
+			shellScript = "set -e\nbash Tools/update_build_number.sh\n/usr/bin/touch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		1FF16580199A6C950080D9A5 /* Fetch Prism Resources */ = {
@@ -1120,13 +1123,15 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/Dependency/prism/components.js",
 			);
 			name = "Fetch Prism Resources";
 			outputPaths = (
+				"${SRCROOT}/MacDown/Resources/Prism/components.js",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "SOURCE=\"$PWD/Dependency/prism\"\nTARGET=\"$PWD/MacDown/Resources/Prism\"\nrm -rf \"$TARGET\"\nmkdir -p \"$TARGET\"\ncp -r \"$SOURCE/components\" \"$TARGET\"\ncp -r \"$SOURCE/themes\" \"$TARGET\"\ncp -r \"$SOURCE/plugins\" \"$TARGET\"\ncp -r \"$SOURCE/components.js\" \"$TARGET\"\n";
+			shellScript = "set -e\nSOURCE=\"$PWD/Dependency/prism\"\nTARGET=\"$PWD/MacDown/Resources/Prism\"\nrm -rf \"$TARGET\"\nmkdir -p \"$TARGET\"\ncp -r \"$SOURCE/components\" \"$TARGET\"\ncp -r \"$SOURCE/themes\" \"$TARGET\"\ncp -r \"$SOURCE/plugins\" \"$TARGET\"\ncp -r \"$SOURCE/components.js\" \"$TARGET\"\n/usr/bin/touch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		655CCD821E310F9767572216 /* [CP] Check Pods Manifest.lock */ = {
@@ -1207,13 +1212,17 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/Tools/GitHub-style-generator/Makefile",
+				"${SRCROOT}/Tools/GitHub-style-generator/index.sass",
+				"${SRCROOT}/Tools/GitHub-style-generator/package-lock.json",
 			);
 			name = "Transpile Styles";
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/MacDown-transpile-styles.stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -x \"$PROJECT_DIR/Tools/GitHub-style-generator/node_modules/.bin/node-sass\" ]; then\n  make -C \"$PROJECT_DIR/Tools/GitHub-style-generator/\"\nfi\n";
+			shellScript = "set -e\nif [ -x \"$PROJECT_DIR/Tools/GitHub-style-generator/node_modules/.bin/node-sass\" ]; then\n  make -C \"$PROJECT_DIR/Tools/GitHub-style-generator/\"\nfi\n/usr/bin/touch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
