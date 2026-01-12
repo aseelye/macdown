@@ -1,4 +1,4 @@
-platform :osx, "10.8"
+platform :osx, "10.15"
 
 source 'https://github.com/MacDownApp/cocoapods-specs.git'  # Patched libraries.
 source 'https://cdn.cocoapods.org/'
@@ -16,7 +16,7 @@ target "MacDown" do
   pod 'MASPreferences', '~> 1.3'
   pod 'Sparkle', '~> 1.18', :inhibit_warnings => false
 
-  # Locked on 0.4.x until we drop 10.8.
+  # Keep pinned unless updating PAPreferences intentionally.
   pod 'PAPreferences', '~> 0.4'
 end
 
@@ -26,4 +26,12 @@ end
 
 target "macdown-cmd" do
   pod 'GBCli', '~> 1.1'
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+    end
+  end
 end

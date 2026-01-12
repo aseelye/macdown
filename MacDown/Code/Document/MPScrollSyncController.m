@@ -11,8 +11,8 @@
 #import "MPEditorView.h"
 
 @interface MPScrollSyncController ()
-@property (unsafe_unretained) MPEditorView *editor;
-@property (unsafe_unretained) WebView *preview;
+@property (weak) MPEditorView *editor;
+@property (weak) WebView *preview;
 @property (copy) NSArray<NSNumber *> *webViewHeaderLocations;
 @property (copy) NSArray<NSNumber *> *editorHeaderLocations;
 @end
