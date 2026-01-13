@@ -173,6 +173,11 @@ check_no_matches \
     "- \\(void\\)openPendingPipedContent \\{" \
     "MacDown/Code/Application/MPMainController.m"
 
+check_no_matches \
+    "F-008: no confusing query-item selector name" \
+    "\\bvalueForKey:fromQueryItems:\\b" \
+    "MacDown/Code/Application"
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi

@@ -141,17 +141,18 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     {
         return;
     }
-    NSString *fileParam = [self valueForKey:@"url" fromQueryItems:queryItems];
+    NSString *fileParam =
+        [self valueForQueryItemNamed:@"url" fromQueryItems:queryItems];
     if (!fileParam)
     {
         return;
     }
     // FIXME: Could not figure out how to place the insertion point at a given
     // line and column.
-    /* Unused */ NSString *lineParam = [self valueForKey:@"line"
-                                          fromQueryItems:queryItems];
-    /* Unused */ NSString *columnParam = [self valueForKey:@"column"
-                                            fromQueryItems:queryItems];
+    /* Unused */ NSString *lineParam =
+        [self valueForQueryItemNamed:@"line" fromQueryItems:queryItems];
+    /* Unused */ NSString *columnParam =
+        [self valueForQueryItemNamed:@"column" fromQueryItems:queryItems];
     NSLog(@"%@:%@:%@", fileParam, lineParam, columnParam);
 
     NSURL *target = [NSURL URLWithString:fileParam];
@@ -171,9 +172,10 @@ NS_INLINE void MPShowTreatIfNeeded(void)
 
 }
 
-- (NSString *)valueForKey:(NSString *)key fromQueryItems:(NSArray *)queryItems
+- (NSString *)valueForQueryItemNamed:(NSString *)name
+                      fromQueryItems:(NSArray *)queryItems
 {
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"name=%@", key];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"name=%@", name];
     NSURLQueryItem *queryItem =
         [[queryItems filteredArrayUsingPredicate:predicate] firstObject];
     return queryItem.value;

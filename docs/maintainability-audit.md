@@ -62,7 +62,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-005 | Med | Editor view state persistence layering | Done |  | Persisted editor behavior moved to preferences API; regression tests added. |
 | F-006 | Med | Renderer flags ownership clarity | Done |  | Flags now flow via renderer delegate; renderer caches html flags; regression tests + invariants added. |
 | F-007 | Med | Style consistency within touched files | Done |  | Normalized Allman brace style in `MPEditorView` and `MPMainController`; invariants added. |
-| F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Not Started |  |  |
+| F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Done |  | Renamed to query-specific selector; invariant added. |
 | F-009 | Med | URL scheme handler unfinished (line/column) | Not Started |  |  |
 | F-010 | Low-Med | Heading IBAction boilerplate duplication | Not Started |  |  |
 | F-011 | Low-Med | `MPDocument` imports hoedown/parser concerns | Done |  | `MPDocument.m` no longer imports hoedown; parsing remains behind `MPRenderer`. |
@@ -333,13 +333,13 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-008 — Confusing selector name `valueForKey:fromQueryItems:`
 
 - Severity: **Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof**
-- Method: `MacDown/Code/Application/MPMainController.m:166`
-- Use: `MacDown/Code/Application/MPMainController.m:138`
+- Method: `MacDown/Code/Application/MPMainController.m:175`
+- Use: `MacDown/Code/Application/MPMainController.m:145`
 
 **Problem**
 - Resembles KVC `valueForKey:` and is easy to misread.
@@ -352,6 +352,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 **Verification**
 - `rg -n "\\bvalueForKey:fromQueryItems:\\b" MacDown/Code/Application` returns no matches.
+- `MacDown/Code/Application/MPMainController.m` uses `valueForQueryItemNamed:fromQueryItems:`.
 
 ---
 
