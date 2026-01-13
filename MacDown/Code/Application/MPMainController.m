@@ -114,29 +114,36 @@ NS_INLINE void MPShowTreatIfNeeded(void)
 - (void)openUrlSchemeAppleEvent:(NSAppleEventDescriptor *)event
                  withReplyEvent:(NSAppleEventDescriptor *)reply
 {
-    NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-    if (!urlString) {
+    NSString *urlString =
+        [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
+    if (!urlString)
+    {
         return;
     }
     NSURL *url = [[NSURL alloc] initWithString:urlString];
-    if (!url) {
+    if (!url)
+    {
         return;
     }
-    NSURLComponents *urlComponents = [NSURLComponents componentsWithURL:url
-                                                resolvingAgainstBaseURL:NO];
-    if (!urlComponents) {
+    NSURLComponents *urlComponents =
+        [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+    if (!urlComponents)
+    {
         return;
     }
     NSString *host = urlComponents.host;
-    if (!host || ![host isEqualToString:@"open"]) {
+    if (!host || ![host isEqualToString:@"open"])
+    {
         return;
     }
     NSArray *queryItems = urlComponents.queryItems;
-    if (!queryItems) {
+    if (!queryItems)
+    {
         return;
     }
     NSString *fileParam = [self valueForKey:@"url" fromQueryItems:queryItems];
-    if (!fileParam) {
+    if (!fileParam)
+    {
         return;
     }
     // FIXME: Could not figure out how to place the insertion point at a given
@@ -148,7 +155,8 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     NSLog(@"%@:%@:%@", fileParam, lineParam, columnParam);
 
     NSURL *target = [NSURL URLWithString:fileParam];
-    if (!target) {
+    if (!target)
+    {
         return;
     }
     NSDocumentController *c = [NSDocumentController sharedDocumentController];
@@ -166,7 +174,8 @@ NS_INLINE void MPShowTreatIfNeeded(void)
 - (NSString *)valueForKey:(NSString *)key fromQueryItems:(NSArray *)queryItems
 {
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"name=%@", key];
-    NSURLQueryItem *queryItem = [[queryItems filteredArrayUsingPredicate:predicate] firstObject];
+    NSURLQueryItem *queryItem =
+        [[queryItems filteredArrayUsingPredicate:predicate] firstObject];
     return queryItem.value;
 }
 
@@ -233,7 +242,8 @@ NS_INLINE void MPShowTreatIfNeeded(void)
 
 - (BOOL)applicationShouldOpenUntitledFile:(NSApplication *)sender
 {
-    if (self.preferences.filesToOpen.count || self.preferences.pipedContentFileToOpen)
+    if (self.preferences.filesToOpen.count
+            || self.preferences.pipedContentFileToOpen)
         return NO;
     return !self.preferences.suppressesUntitledDocumentOnLaunch;
 }
@@ -312,18 +322,29 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     [self.preferences synchronize];
 }
 
-- (void)openPendingPipedContent {
+- (void)openPendingPipedContent
+{
     NSDocumentController *c = [NSDocumentController sharedDocumentController];
 
-    if (self.preferences.pipedContentFileToOpen) {
-        NSURL *pipedContentFileToOpenURL = [NSURL fileURLWithPath:self.preferences.pipedContentFileToOpen];
+    if (self.preferences.pipedContentFileToOpen)
+    {
+        NSURL *pipedContentFileToOpenURL =
+            [NSURL fileURLWithPath:self.preferences.pipedContentFileToOpen];
         NSError *readPipedContentError;
-        NSString *pipedContentString = [NSString stringWithContentsOfURL:pipedContentFileToOpenURL encoding:NSUTF8StringEncoding error:&readPipedContentError];
+        NSString *pipedContentString =
+            [NSString stringWithContentsOfURL:pipedContentFileToOpenURL
+                                     encoding:NSUTF8StringEncoding
+                                        error:&readPipedContentError];
 
         NSError *openDocumentError;
-        MPDocument *document = (MPDocument *)[c openUntitledDocumentAndDisplay:YES error:&openDocumentError];
+        MPDocument *document =
+            (MPDocument *)[c openUntitledDocumentAndDisplay:YES
+                                                     error:&openDocumentError];
 
-        if (document && openDocumentError == nil && readPipedContentError == nil) {
+        if (document
+                && openDocumentError == nil
+                && readPipedContentError == nil)
+        {
             document.markdown = pipedContentString;
         }
 

@@ -61,7 +61,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-004 | High | Preference canonicalization + migration | Done |  | Migrated legacy defaults keys; updated bindings/observers; migration regression tests added. |
 | F-005 | Med | Editor view state persistence layering | Done |  | Persisted editor behavior moved to preferences API; regression tests added. |
 | F-006 | Med | Renderer flags ownership clarity | Done |  | Flags now flow via renderer delegate; renderer caches html flags; regression tests + invariants added. |
-| F-007 | Med | Style consistency within touched files | Not Started |  |  |
+| F-007 | Med | Style consistency within touched files | Done |  | Normalized Allman brace style in `MPEditorView` and `MPMainController`; invariants added. |
 | F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Not Started |  |  |
 | F-009 | Med | URL scheme handler unfinished (line/column) | Not Started |  |  |
 | F-010 | Low-Med | Heading IBAction boilerplate duplication | Not Started |  |  |
@@ -302,14 +302,17 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-007 — Style inconsistencies in touched files (Allman vs K&R)
 
 - Severity: **Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof**
-- K&R `@synchronized`: `MacDown/Code/View/MPEditorView.m:37`
-- K&R `if` blocks: `MacDown/Code/Application/MPMainController.m:118`
-- K&R `@synchronized`: `MacDown/Code/Document/MPDocument+Observers.m:125`
+- `@synchronized` uses Allman braces:
+  - `MacDown/Code/View/MPEditorView.m:37`
+  - `MacDown/Code/Document/MPDocument+Observers.m:174`
+- URL scheme handler uses Allman `if`/method braces:
+  - `MacDown/Code/Application/MPMainController.m:119`
+  - `MacDown/Code/Application/MPMainController.m:325`
 
 **Problem**
 - Inconsistent styling increases diff noise and slows review/refactor work.
@@ -323,6 +326,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 **Verification**
 - Diff review and `git diff --check` clean.
+- Invariants: `Tools/check_maintainability_invariants.sh` reports OK.
 
 ---
 

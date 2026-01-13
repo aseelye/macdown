@@ -34,7 +34,8 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
 
 - (BOOL)scrollsPastEnd
 {
-    @synchronized(self) {
+    @synchronized(self)
+    {
         return _scrollsPastEnd;
     }
 }
@@ -95,7 +96,8 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
 
 - (void)setScrollsPastEnd:(BOOL)scrollsPastEnd
 {
-    @synchronized(self) {
+    @synchronized(self)
+    {
         _scrollsPastEnd = scrollsPastEnd;
         if (scrollsPastEnd)
         {
@@ -113,7 +115,8 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
 
 - (NSRect)contentRect
 {
-    @synchronized(self) {
+    @synchronized(self)
+    {
         if (MPAreRectsEqual(_contentRect, NSZeroRect))
             return self.frame;
         return _contentRect;
@@ -122,7 +125,8 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
 
 - (void)setContentRect:(NSRect)rect
 {
-    @synchronized(self) {
+    @synchronized(self)
+    {
         _contentRect = rect;
     }
 }

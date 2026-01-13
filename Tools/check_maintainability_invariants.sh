@@ -15,15 +15,15 @@ check_no_matches() {
     path="$3"
 
     if command -v rg >/dev/null 2>&1; then
-        if rg -n "$pattern" "$path" >/dev/null; then
+        if rg -n -- "$pattern" "$path" >/dev/null; then
             echo "FAIL: $description"
-            rg -n "$pattern" "$path" || true
+            rg -n -- "$pattern" "$path" || true
             fail=1
         fi
     else
-        if grep -R -n -E "$pattern" "$path" >/dev/null 2>&1; then
+        if grep -R -n -E -- "$pattern" "$path" >/dev/null 2>&1; then
             echo "FAIL: $description"
-            grep -R -n -E "$pattern" "$path" || true
+            grep -R -n -E -- "$pattern" "$path" || true
             fail=1
         fi
     fi
@@ -41,19 +41,21 @@ check_no_matches_excluding() {
             excluded_tail="${excluded_path#"$path"/}"
         fi
 
-        if rg -n "$pattern" "$path" \
+        if rg -n \
             --glob "!$excluded_path" \
             --glob "!**/$excluded_tail" \
+            -- "$pattern" "$path" \
             >/dev/null; then
             echo "FAIL: $description"
-            rg -n "$pattern" "$path" \
+            rg -n \
                 --glob "!$excluded_path" \
                 --glob "!**/$excluded_tail" \
+                -- "$pattern" "$path" \
                 || true
             fail=1
         fi
     else
-        matches="$(grep -R -n -E "$pattern" "$path" 2>/dev/null || true)"
+        matches="$(grep -R -n -E -- "$pattern" "$path" 2>/dev/null || true)"
         filtered="$(printf "%s\n" "$matches" | grep -v "^$excluded_path:" || true)"
         if [ -n "$filtered" ]; then
             echo "FAIL: $description"
@@ -150,6 +152,26 @@ check_no_matches \
     "F-006: document code does not sync renderer.rendererFlags" \
     "(self\\.)?renderer\\.rendererFlags" \
     "MacDown/Code/Document"
+
+check_no_matches \
+    "F-007: MPEditorView uses Allman @synchronized" \
+    "^\\s*@synchronized\\(self\\) \\{" \
+    "MacDown/Code/View/MPEditorView.m"
+
+check_no_matches \
+    "F-007: MPMainController uses Allman if braces" \
+    "^\\s*if\\s*\\([^\\n]*\\)\\s*\\{" \
+    "MacDown/Code/Application/MPMainController.m"
+
+check_no_matches \
+    "F-007: MPMainController uses Allman else braces" \
+    "^\\s*\\}\\s*else\\s*\\{" \
+    "MacDown/Code/Application/MPMainController.m"
+
+check_no_matches \
+    "F-007: MPMainController openPendingPipedContent uses Allman braces" \
+    "- \\(void\\)openPendingPipedContent \\{" \
+    "MacDown/Code/Application/MPMainController.m"
 
 if [ "$fail" -ne 0 ]; then
     exit 1
