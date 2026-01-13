@@ -239,6 +239,7 @@ NS_INLINE BOOL MPAreNilableStringsEqual(NSString *s1, NSString *s2)
 @property BOOL lineNumbers;
 @property BOOL manualRender;
 @property (copy) NSString *highlightingThemeName;
+@property int htmlFlags;
 
 @end
 
@@ -319,7 +320,7 @@ NS_INLINE hoedown_buffer *language_addition(
 
 NS_INLINE hoedown_renderer *MPCreateHTMLRenderer(MPRenderer *renderer)
 {
-    int flags = renderer.rendererFlags;
+    int flags = renderer.htmlFlags;
     hoedown_renderer *htmlRenderer = hoedown_html_renderer_new(
         flags, kMPRendererTOCLevel);
     htmlRenderer->blockcode = hoedown_patch_render_blockcode;
@@ -390,7 +391,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 
     NSMutableArray *stylesheets = [NSMutableArray arrayWithObject:stylesheet];
 
-    if (self.rendererFlags & HOEDOWN_HTML_BLOCKCODE_LINE_NUMBERS)
+    if (self.htmlFlags & HOEDOWN_HTML_BLOCKCODE_LINE_NUMBERS)
     {
         NSURL *url = MPPrismPluginURL(@"line-numbers", @"css");
         [stylesheets addObject:[MPStyleSheet CSSWithURL:url]];
@@ -418,7 +419,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
             [scripts addObject:[MPScript javaScriptWithURL:url]];
     }
 
-    if (self.rendererFlags & HOEDOWN_HTML_BLOCKCODE_LINE_NUMBERS)
+    if (self.htmlFlags & HOEDOWN_HTML_BLOCKCODE_LINE_NUMBERS)
     {
         NSURL *url = MPPrismPluginURL(@"line-numbers", @"js");
         [scripts addObject:[MPScript javaScriptWithURL:url]];
@@ -516,7 +517,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 {
     id<MPRendererDelegate> d = self.delegate;
     NSMutableArray *scripts = [NSMutableArray array];
-    if (self.rendererFlags & HOEDOWN_HTML_USE_TASK_LIST)
+    if (self.htmlFlags & HOEDOWN_HTML_USE_TASK_LIST)
     {
         NSURL *url = MPExtensionURL(@"tasklist", @"js");
         [scripts addObject:[MPScript javaScriptWithURL:url]];
@@ -535,6 +536,16 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 }
 
 #pragma mark - Public
+
+- (BOOL)needsParseForPreferencesChange
+{
+    id<MPRendererDelegate> delegate = self.delegate;
+    return ([delegate rendererExtensions:self] != self.extensions
+            || [delegate rendererHTMLFlags:self] != self.htmlFlags
+            || [delegate rendererHasSmartyPants:self] != self.smartypants
+            || [delegate rendererRendersTOC:self] != self.TOC
+            || [delegate rendererDetectsFrontMatter:self] != self.frontMatter);
+}
 
 - (void)parseAndRenderWithMaxDelay:(NSTimeInterval)maxDelay
 {
@@ -609,12 +620,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
             markdown = [[self.dataSource rendererMarkdown:self] copy];
         });
 
-        id<MPRendererDelegate> delegate = self.delegate;
-        BOOL needsParse =
-            ([delegate rendererExtensions:self] != self.extensions
-             || [delegate rendererHasSmartyPants:self] != self.smartypants
-             || [delegate rendererRendersTOC:self] != self.TOC
-             || [delegate rendererDetectsFrontMatter:self] != self.frontMatter);
+        BOOL needsParse = [self needsParseForPreferencesChange];
 
         if (needsParse)
             [self parseMarkdown:markdown];
@@ -632,11 +638,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 
 - (void)parseIfPreferencesChanged
 {
-    id<MPRendererDelegate> delegate = self.delegate;
-    if ([delegate rendererExtensions:self] != self.extensions
-            || [delegate rendererHasSmartyPants:self] != self.smartypants
-            || [delegate rendererRendersTOC:self] != self.TOC
-            || [delegate rendererDetectsFrontMatter:self] != self.frontMatter)
+    if ([self needsParseForPreferencesChange])
     {
         [self.parseQueue cancelAllOperations];
         [self.parseQueue addOperationWithBlock:^{
@@ -655,6 +657,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 
     id<MPRendererDelegate> delegate = self.delegate;
     int extensions = [delegate rendererExtensions:self];
+    int htmlFlags = [delegate rendererHTMLFlags:self];
     BOOL smartypants = [delegate rendererHasSmartyPants:self];
     BOOL hasFrontMatter = [delegate rendererDetectsFrontMatter:self];
     BOOL hasTOC = [delegate rendererRendersTOC:self];
@@ -667,6 +670,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         markdown = [markdown substringFromIndex:offset];
     }
     markdown = [MPMarkdownPreprocessor markdownForRenderingFromMarkdown:markdown];
+    self.htmlFlags = htmlFlags;
     hoedown_renderer *htmlRenderer = MPCreateHTMLRenderer(self);
     hoedown_renderer *tocRenderer = NULL;
     if (hasTOC)

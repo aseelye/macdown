@@ -240,6 +240,11 @@ current file somewhere to enable this feature.", \
     return self.preferences.extensionFlags;
 }
 
+- (int)rendererHTMLFlags:(MPRenderer *)renderer
+{
+    return self.preferences.rendererFlags;
+}
+
 - (BOOL)rendererHasSmartyPants:(MPRenderer *)renderer
 {
     return self.preferences.extensionSmartyPants;

@@ -9,8 +9,10 @@
 #import <Cocoa/Cocoa.h>
 @class MPPreferences;
 
+@protocol MPRendererDataSource;
+@protocol MPRendererDelegate;
 
-@interface MPDocument : NSDocument
+@interface MPDocument : NSDocument <MPRendererDataSource, MPRendererDelegate>
 
 @property (nonatomic, readonly) MPPreferences *preferences;
 @property (readonly) BOOL previewVisible;

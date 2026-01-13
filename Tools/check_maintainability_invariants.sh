@@ -141,6 +141,16 @@ check_no_matches \
     "NSUserDefaults|standardUserDefaults" \
     "MacDown/Code/Document/MPDocument+Editor.m"
 
+check_no_matches \
+    "F-006: MPRenderer has no rendererFlags property" \
+    "@property \\(nonatomic\\) int rendererFlags;" \
+    "MacDown/Code/Document/MPRenderer.h"
+
+check_no_matches \
+    "F-006: document code does not sync renderer.rendererFlags" \
+    "(self\\.)?renderer\\.rendererFlags" \
+    "MacDown/Code/Document"
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi

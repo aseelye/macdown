@@ -153,7 +153,6 @@ NS_INLINE NSString *MPRectStringForAutosaveName(NSString *name)
     self.renderer = [[MPRenderer alloc] init];
     self.renderer.dataSource = self;
     self.renderer.delegate = self;
-    self.renderer.rendererFlags = self.preferences.rendererFlags;
 
     self.editor.postsFrameChangedNotifications = YES;
     self.preview.frameLoadDelegate = self;

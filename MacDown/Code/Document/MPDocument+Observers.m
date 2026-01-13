@@ -137,19 +137,14 @@ static void * const MPDocumentEditorKVOContext =
     if (!renderer)
         return;
 
-    // Force update if we're switching from manual to auto, or renderer settings
-    // changed.
-    int rendererFlags = self.preferences.rendererFlags;
-    if ((!self.preferences.markdownManualRender && self.manualRender)
-            || renderer.rendererFlags != rendererFlags)
-    {
-        renderer.rendererFlags = rendererFlags;
+    // Force update if we're switching from manual to auto, or parse-affecting
+    // preferences changed.
+    if (!self.preferences.markdownManualRender && self.manualRender)
         [renderer parseAndRenderLater];
-    }
+    else if ([renderer needsParseForPreferencesChange])
+        [renderer parseAndRenderLater];
     else
-    {
         [renderer parseAndRenderIfNeeded];
-    }
 }
 
 - (void)editorFrameDidChange:(NSNotification *)notification

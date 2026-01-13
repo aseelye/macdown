@@ -60,7 +60,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-003 | High | Observer lifecycle safety (KVO/notifications) | Done |  | KVO uses explicit contexts; teardown is idempotent; regression tests added. |
 | F-004 | High | Preference canonicalization + migration | Done |  | Migrated legacy defaults keys; updated bindings/observers; migration regression tests added. |
 | F-005 | Med | Editor view state persistence layering | Done |  | Persisted editor behavior moved to preferences API; regression tests added. |
-| F-006 | Med | Renderer flags ownership clarity | Not Started |  |  |
+| F-006 | Med | Renderer flags ownership clarity | Done |  | Flags now flow via renderer delegate; renderer caches html flags; regression tests + invariants added. |
 | F-007 | Med | Style consistency within touched files | Not Started |  |  |
 | F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Not Started |  |  |
 | F-009 | Med | URL scheme handler unfinished (line/column) | Not Started |  |  |
@@ -265,15 +265,18 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-006 — Renderer flags ownership is split between preferences and renderer
 
 - Severity: **Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof**
 - Preferences provide flags: `MacDown/Code/Preferences/MPPreferences+Hoedown.h:11`
-- Renderer stores flags: `MacDown/Code/Document/MPRenderer.h:24`
-- Document syncs flags and triggers parse/render: `MacDown/Code/Document/MPDocument+Observers.m:80`
-  (initial sync: `MacDown/Code/Document/MPDocument.m:156`)
+- Document supplies flags via renderer delegate: `MacDown/Code/Document/MPDocument+Preview.m:243`
+- Renderer snapshots flags during parse and includes them in parse-needed checks:
+  - `MacDown/Code/Document/MPRenderer.m:540` (`needsParseForPreferencesChange`)
+  - `MacDown/Code/Document/MPRenderer.m:660` (`parseMarkdown:` reads `rendererHTMLFlags:`)
+- Document no longer syncs renderer flags (parse decision now delegated):
+  `MacDown/Code/Document/MPDocument+Observers.m:144`
 
 **Problem**
 - Unclear ownership increases risk of stale state and redundant updates.
@@ -282,11 +285,17 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Define a single source of truth and a single configuration pathway.
 
 **Acceptance criteria**
-- Renderer configuration is explicit and centralized (no ad-hoc syncing).
-- Toggling render-related preferences triggers the minimal correct work.
+- Renderer configuration is explicit and centralized (no ad-hoc syncing via
+  `renderer.rendererFlags`).
+- Toggling render-related preferences triggers the minimal correct work:
+  - Parse-affecting preferences -> parse+render.
+  - Render-only preferences -> render-only.
 
 **Verification**
-- Toggle markdown/render preferences; confirm expected parse/render behavior.
+- Unit: `MacDownTests/MPRendererHTMLFlagsTests.m:114` passes.
+- Invariants: `Tools/check_maintainability_invariants.sh` reports OK.
+- Manual: toggle “Hard Wrap” (or other renderer flags) and confirm preview HTML
+  updates accordingly.
 
 ---
 

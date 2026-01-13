@@ -86,6 +86,7 @@
 		1FFEB31919729F7C00B2254F /* MPAssetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1FFEB31819729F7C00B2254F /* MPAssetTests.m */; };
 		1DE31F095A6346F7BB0CC822 /* MPToolbarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6119B9492C9C44DA89D2FD43 /* MPToolbarControllerTests.m */; };
 		A1B2C3D4E5F60718293A4B5D /* MPDocumentObserverLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* MPDocumentObserverLifecycleTests.m */; };
+		D2E3F4A5B60718293A4B5C61 /* MPRendererHTMLFlagsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B60718293A4B5C60 /* MPRendererHTMLFlagsTests.m */; };
 		1FFEB31D19729FEF00B2254F /* test.css in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31C19729FEF00B2254F /* test.css */; };
 		1FFEB31E1972A28400B2254F /* test.js in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31A19729FD500B2254F /* test.js */; };
 		1FFEB3201972B04D00B2254F /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31F1972B04D00B2254F /* test.txt */; };
@@ -493,6 +494,7 @@
 		1FCDCA301944F96E00B1F966 /* MacDownTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "MacDownTests-Info.plist"; sourceTree = "<group>"; };
 		1FCDCA311944F96E00B1F966 /* MPPreferencesTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPPreferencesTests.m; sourceTree = "<group>"; };
 		B0C1D2E3F4A5061728394A5A /* MPPreferencesMigrationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPPreferencesMigrationTests.m; sourceTree = "<group>"; };
+		D2E3F4A5B60718293A4B5C60 /* MPRendererHTMLFlagsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPRendererHTMLFlagsTests.m; sourceTree = "<group>"; };
 		1FCDCA331944F96E00B1F966 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1FCE066319633D6B00DC83B4 /* Data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Data; path = Resources/Data; sourceTree = "<group>"; };
 		1FF1420119A8987500CF8A6A /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -902,6 +904,7 @@
 				1FF1420319A8A24800CF8A6A /* MPUtilityTests.m */,
 				1F25E1C21A50F4F10029371D /* MPColorTests.m */,
 					1FCDCA311944F96E00B1F966 /* MPPreferencesTests.m */,
+					D2E3F4A5B60718293A4B5C60 /* MPRendererHTMLFlagsTests.m */,
 					C1D2E3F4A5B60718293A4B5D /* MPPreferencesEditorBehaviorTests.m */,
 					B0C1D2E3F4A5061728394A5A /* MPPreferencesMigrationTests.m */,
 					1FFF301C1948A5320009AF24 /* MPStringLookupTests.m */,
@@ -1337,6 +1340,7 @@
 			files = (
 					1FFEB31919729F7C00B2254F /* MPAssetTests.m in Sources */,
 					1F51C9A5194565050015A96F /* MPPreferencesTests.m in Sources */,
+					D2E3F4A5B60718293A4B5C61 /* MPRendererHTMLFlagsTests.m in Sources */,
 					C1D2E3F4A5B60718293A4B5E /* MPPreferencesEditorBehaviorTests.m in Sources */,
 					B0C1D2E3F4A5061728394A5B /* MPPreferencesMigrationTests.m in Sources */,
 					1FF1420419A8A24800CF8A6A /* MPUtilityTests.m in Sources */,

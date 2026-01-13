@@ -21,9 +21,10 @@ typedef NS_ENUM(NSUInteger, MPCodeBlockAccessoryType)
 
 @interface MPRenderer : NSObject
 
-@property (nonatomic) int rendererFlags;
 @property (weak) id<MPRendererDataSource> dataSource;
 @property (weak) id<MPRendererDelegate> delegate;
+
+- (BOOL)needsParseForPreferencesChange;
 
 - (void)parseAndRenderNow;
 - (void)parseAndRenderLater;
@@ -50,6 +51,7 @@ typedef NS_ENUM(NSUInteger, MPCodeBlockAccessoryType)
 @protocol MPRendererDelegate <NSObject>
 
 - (int)rendererExtensions:(MPRenderer *)renderer;
+- (int)rendererHTMLFlags:(MPRenderer *)renderer;
 - (BOOL)rendererHasSmartyPants:(MPRenderer *)renderer;
 - (BOOL)rendererRendersTOC:(MPRenderer *)renderer;
 - (NSString *)rendererTemplateName:(MPRenderer *)renderer;
