@@ -1,7 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from __future__ import print_function
 
 import argparse
 import os
@@ -12,12 +10,6 @@ import zipfile
 from xml.etree import ElementTree
 
 from macdown_utils import ROOT_DIR, XCODEBUILD, execute
-
-
-try:
-    input = raw_input
-except NameError:   # Python 3 does not have raw_input.
-    pass
 
 
 OPENSSL = '/usr/bin/openssl'

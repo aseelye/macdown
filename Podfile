@@ -14,8 +14,6 @@ target "MacDown" do
   pod 'LibYAML', '~> 0.1'
   pod 'M13OrderedDictionary', '~> 1.1'
   pod 'MASPreferences', '~> 1.3'
-  pod 'Sparkle', '~> 1.18', :inhibit_warnings => false
-
   # Keep pinned unless updating PAPreferences intentionally.
   pod 'PAPreferences', '~> 0.4'
 end

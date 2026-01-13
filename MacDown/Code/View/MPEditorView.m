@@ -39,55 +39,55 @@ NS_INLINE BOOL MPAreRectsEqual(NSRect r1, NSRect r2)
     }
 }
 
-- (void)awakeFromNib {
-    [self registerForDraggedTypes:[NSArray arrayWithObjects: NSDragPboard, nil]];
+- (void)awakeFromNib
+{
+    [self registerForDraggedTypes:@[NSDragPboard]];
     [super awakeFromNib];
 }
 
-- (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender {
-    NSPasteboard *pboard;
-    NSDragOperation sourceDragMask;
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
+{
+    NSPasteboard *pboard = [sender draggingPasteboard];
+    NSDragOperation sourceDragMask = [sender draggingSourceOperationMask];
 
-    sourceDragMask = [sender draggingSourceOperationMask];
-    pboard = [sender draggingPasteboard];
-
-    if ([pboard canReadItemWithDataConformingToTypes:[NSArray arrayWithObjects:@"public.jpeg", nil]]) {
-        if (sourceDragMask & NSDragOperationLink) {
+    if ([pboard canReadItemWithDataConformingToTypes:@[@"public.jpeg"]])
+    {
+        if (sourceDragMask & NSDragOperationLink)
             return NSDragOperationLink;
-        } else if (sourceDragMask & NSDragOperationCopy) {
+        if (sourceDragMask & NSDragOperationCopy)
             return NSDragOperationCopy;
-        }
     }
 
     return NSDragOperationNone;
 }
 
-- (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
-    NSPasteboard *pboard;
-    NSDragOperation sourceDragMask;
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
+{
+    NSPasteboard *pboard = [sender draggingPasteboard];
 
-    sourceDragMask = [sender draggingSourceOperationMask];
-    pboard = [sender draggingPasteboard];
-
-    if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
+    if ([[pboard types] containsObject:NSFilenamesPboardType])
+    {
         NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
-
-        /* Load data of file. */
-        NSError *error;
-        NSData *fileData = [NSData dataWithContentsOfFile: files[0]
-                                                  options: NSMappedRead
-                                                    error: &error];
-        if (!error) {
-            // convert to base64 representation
-            NSString *dataString = [fileData base64EncodedStringWithOptions:0];
-
-            // insert into text.
-            NSInteger insertionPoint = [[[self selectedRanges] objectAtIndex:0] rangeValue].location;
-            [self setString:[NSString stringWithFormat:@"%@![](data:image/jpeg;base64,%@)%@", [[self string] substringToIndex:insertionPoint], dataString, [[self string] substringFromIndex:insertionPoint]]];
-            [self didChangeText];
-        } else {
+        if (!files.count)
             return NO;
-        }
+
+        NSError *error;
+        NSData *fileData = [NSData dataWithContentsOfFile:files[0]
+                                                  options:NSMappedRead
+                                                    error:&error];
+        if (error || !fileData)
+            return NO;
+
+        NSString *dataString = [fileData base64EncodedStringWithOptions:0];
+        NSString *markdown =
+            [NSString stringWithFormat:@"![](data:image/jpeg;base64,%@)",
+                                       dataString];
+
+        NSInteger insertionPoint =
+            [self.selectedRanges.firstObject rangeValue].location;
+        [self insertText:markdown
+        replacementRange:NSMakeRange((NSUInteger)insertionPoint, 0)];
+        [self didChangeText];
     }
     return YES;
 }

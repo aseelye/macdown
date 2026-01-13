@@ -145,8 +145,9 @@ static NSString * const kMPBlockquoteLinePattern = @"^((?:\\> ?)+).*$";
     if (location > 0 && location <= contentLength)
         p = [content characterAtIndex:location - 1];
 
-    for (const unichar *cs = kMPMatchingCharactersMap[0]; *cs != 0; cs += 2)
+    for (size_t i = 0; kMPMatchingCharactersMap[i][0] != 0; i++)
     {
+        const unichar *cs = kMPMatchingCharactersMap[i];
         // Ignore IM input of ASCII charaters.
         if (hasMarkedText && cs[0] < L'\u0100')
             continue;
@@ -209,8 +210,9 @@ static NSString * const kMPBlockquoteLinePattern = @"^((?:\\> ?)+).*$";
                         aroundTextInRange:(NSRange)range
                      strikethroughEnabled:(BOOL)isStrikethroughEnabled
 {
-    for (const unichar *cs = kMPMatchingCharactersMap[0]; *cs != 0; cs += 2)
+    for (size_t i = 0; kMPMatchingCharactersMap[i][0] != 0; i++)
     {
+        const unichar *cs = kMPMatchingCharactersMap[i];
         if (character == cs[0])
         {
             [self wrapTextInRange:range withPrefix:cs[0] suffix:cs[1]];
@@ -242,8 +244,9 @@ static NSString * const kMPBlockquoteLinePattern = @"^((?:\\> ?)+).*$";
     unichar f = [string characterAtIndex:location - 1];
     unichar b = [string characterAtIndex:location];
 
-    for (const unichar *cs = kMPMatchingCharactersMap[0]; *cs != 0; cs += 2)
+    for (size_t i = 0; kMPMatchingCharactersMap[i][0] != 0; i++)
     {
+        const unichar *cs = kMPMatchingCharactersMap[i];
         if (f == cs[0] && b == cs[1])
         {
             NSRange range = NSMakeRange(location - 1, 2);
@@ -493,10 +496,11 @@ static NSString * const kMPBlockquoteLinePattern = @"^((?:\\> ?)+).*$";
     NSData *mapped = map[content];
     if (!mapped)
         return NO;
-    NSArray *components = @[NSTemporaryDirectory(),
-                             [NSString stringWithFormat:@"%lu", content.hash]];
-    NSString *path = [NSString pathWithComponents:components];
-    [mapped writeToFile:path atomically:NO];
+    NSString *path = MPWriteDataToTemporaryFile(
+        mapped, [NSString stringWithFormat:@"%lu", content.hash]
+    );
+    if (!path.length)
+        return NO;
     NSString *text = [NSString stringWithFormat:@"![%@](%@)", content, path];
     [self insertText:text replacementRange:NSMakeRange(0, contentLength)];
     self.selectedRange = NSMakeRange(2, contentLength);

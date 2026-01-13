@@ -9,6 +9,7 @@
 #import <WebKit/WebKit.h>
 
 #import "MPEditorView.h"
+#import "WebView+MPSugar.h"
 
 @interface MPScrollSyncController ()
 @property (weak) MPEditorView *editor;
@@ -175,7 +176,6 @@
 
     currY = MAX(0, currY - minY);
     maxY -= minY;
-    minY = 0;
     CGFloat percentScrolledBetweenHeaders = MAX(0, MIN(1.0, currY / maxY));
 
     CGFloat topHeaderY = 0;

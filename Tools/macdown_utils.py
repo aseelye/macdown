@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -17,10 +17,10 @@ class CommandError(Exception):
 
 
 def execute(*args):
-    proc = subprocess.Popen(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
-    stdout, stderr = map(lambda s: s.decode('utf-8'), proc.communicate())
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout_bytes, stderr_bytes = proc.communicate()
+    stdout = stdout_bytes.decode("utf-8")
+    stderr = stderr_bytes.decode("utf-8")
     if proc.returncode:
         raise CommandError(
             '"{cmd}" failed with error {code}.\n {output}'.format(

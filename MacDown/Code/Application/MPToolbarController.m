@@ -7,10 +7,7 @@
 //
 
 #import "MPToolbarController.h"
-
-// Because we're creating selectors for methods which aren't in this class
-#pragma GCC diagnostic ignored "-Wundeclared-selector"
-#pragma clang diagnostic ignored "-Wundeclared-selector"
+#import "MPDocument+Actions.h"
 
 
 static CGFloat itemWidth = 37;
@@ -99,7 +96,7 @@ static CGFloat itemWidth = 37;
 - (NSArray *)toolbarItemIdentifiersFromItemsArray:(NSArray *)toolbarItemsArray {
     NSMutableArray *orderedIdentifiers = [NSMutableArray new];
     
-    for (NSToolbarItem *item in self->toolbarItems) {
+    for (NSToolbarItem *item in toolbarItemsArray) {
         [orderedIdentifiers addObject:item.itemIdentifier];
     }
     
@@ -126,15 +123,17 @@ static CGFloat itemWidth = 37;
 - (NSArray<NSString *> *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar
 {
     // From toolbar item dictionary(setupToolbarItems)
-    //NSArray *orderedToolbarItemIdentifiers = [self orderedToolbarDefaultItemKeysForDictionary:self->toolbarItems];
     NSArray *orderedToolbarItemIdentifiers = [self toolbarItemIdentifiersFromItemsArray:self->toolbarItems];
     
     // Mixed identifiers from dictionary and space at below specified indices
     NSMutableArray *defaultItemIdentifiers = [NSMutableArray new];
     
     // Add space after the specified toolbar item indices
-    int spaceAfterIndices[] = {}; // No space in the default set
-    int flexibleSpaceAfterIndices[] = {2, 3, 5, 7, 11};
+    static const NSInteger *spaceAfterIndices = NULL; // No space in the default set
+    static const NSUInteger spaceAfterIndicesCount = 0;
+    static const NSInteger flexibleSpaceAfterIndices[] = {2, 3, 5, 7, 11};
+    static const NSUInteger flexibleSpaceAfterIndicesCount =
+        sizeof(flexibleSpaceAfterIndices) / sizeof(flexibleSpaceAfterIndices[0]);
     int i = 0;
     int j = 0;
     int k = 0;
@@ -144,19 +143,24 @@ static CGFloat itemWidth = 37;
         // exclude some toolbar items from the default toolbar
         if ([itemIdentifier  isEqual: @"comment"]
             || [itemIdentifier  isEqual: @"highlight"]
-            || [itemIdentifier  isEqual: @"strikethrough"]) {
+            || [itemIdentifier  isEqual: @"strikethrough"])
+        {
             // do nothing here
-        }else {
+        }
+        else
+        {
             [defaultItemIdentifiers addObject:itemIdentifier];
         }
         
-        if (i == spaceAfterIndices[j])
+        if ((NSUInteger)j < spaceAfterIndicesCount
+            && i == spaceAfterIndices[j])
         {
             [defaultItemIdentifiers addObject:NSToolbarSpaceItemIdentifier];
             j++;
         }
         
-        if (i == flexibleSpaceAfterIndices[k])
+        if ((NSUInteger)k < flexibleSpaceAfterIndicesCount
+            && i == flexibleSpaceAfterIndices[k])
         {
             [defaultItemIdentifiers addObject:NSToolbarFlexibleSpaceItemIdentifier];
             k++;
@@ -180,7 +184,7 @@ static CGFloat itemWidth = 37;
 
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag
 {
-    NSToolbarItem *item;
+    NSToolbarItem *item = nil;
     
     for (NSToolbarItem *currentItem in self->toolbarItems) {
         if ([currentItem.itemIdentifier isEqualToString:itemIdentifier]) {

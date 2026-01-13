@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals
 import io
 import os
+import shutil
 import sys
 
 from xml.etree import ElementTree
@@ -79,7 +79,10 @@ def main():
         return
     clean_xliff()
     write_transifex_config()
-    execute(os.path.expanduser('~/Library/Python/2.7/bin/tx'), 'push', '-s')
+    tx = shutil.which('tx')
+    if not tx:
+        raise RuntimeError('"tx" not found on PATH')
+    execute(tx, 'push', '-s')
 
 
 if __name__ == '__main__':

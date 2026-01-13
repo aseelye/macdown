@@ -1,12 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import configparser
 import logging
 import os
 
 from xml.etree import ElementTree
-
-from compat import ConfigParser
 from macdown_utils import ROOT_DIR, XCODEBUILD, XLIFF_URL, execute
 
 
@@ -33,7 +32,7 @@ def pull_translations(parser):
 
 
 def parse_tx_config():
-    parser = ConfigParser()
+    parser = configparser.ConfigParser()
     with open(TX_CONFIG_FILE) as f:
         parser.read_file(f)
     return parser

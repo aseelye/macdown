@@ -21,12 +21,7 @@
 #import "MPMarkdownPreprocessor.h"
 
 // Warning: If the version of MathJax is ever updated, please check the status
-// of https://github.com/mathjax/MathJax/issues/548. If the fix has been merged
-// in to MathJax, then the WebResourceLoadDelegate can be removed from MPDocument
-// and MathJax.js can be removed from this project.
-static NSString * const kMPMathJaxCDN =
-    @"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js"
-    @"?config=TeX-AMS-MML_HTMLorMML";
+// of https://github.com/mathjax/MathJax/issues/548.
 static NSString * const kMPPrismScriptDirectory = @"Prism/components";
 static NSString * const kMPPrismThemeDirectory = @"Prism/themes";
 static NSString * const kMPPrismPluginDirectory = @"Prism/plugins";
@@ -240,7 +235,7 @@ NS_INLINE BOOL MPAreNilableStringsEqual(NSString *s1, NSString *s2)
 @property BOOL syntaxHighlighting;
 @property BOOL mermaid;
 @property BOOL graphviz;
-@property MPCodeBlockAccessoryType codeBlockAccesory;
+@property MPCodeBlockAccessoryType codeBlockAccessory;
 @property BOOL lineNumbers;
 @property BOOL manualRender;
 @property (copy) NSString *highlightingThemeName;
@@ -400,7 +395,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         NSURL *url = MPPrismPluginURL(@"line-numbers", @"css");
         [stylesheets addObject:[MPStyleSheet CSSWithURL:url]];
     }
-    if ([self.delegate rendererCodeBlockAccesory:self]
+    if ([self.delegate rendererCodeBlockAccessory:self]
         == MPCodeBlockAccessoryLanguageName)
     {
         NSURL *url = MPPrismPluginURL(@"show-language", @"css");
@@ -428,7 +423,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         NSURL *url = MPPrismPluginURL(@"line-numbers", @"js");
         [scripts addObject:[MPScript javaScriptWithURL:url]];
     }
-    if ([self.delegate rendererCodeBlockAccesory:self]
+    if ([self.delegate rendererCodeBlockAccessory:self]
         == MPCodeBlockAccessoryLanguageName)
     {
         NSURL *url = MPPrismPluginURL(@"show-language", @"js");
@@ -440,7 +435,6 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 - (NSArray *)mathjaxScripts
 {
     NSMutableArray *scripts = [NSMutableArray array];
-    NSURL *url = [NSURL URLWithString:kMPMathJaxCDN];
     NSBundle *bundle = [NSBundle mainBundle];
     MPEmbeddedScript *script =
         [MPEmbeddedScript assetWithURL:[bundle URLForResource:@"init"
@@ -448,7 +442,11 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
                                                  subdirectory:@"MathJax"]
                                andType:kMPMathJaxConfigType];
     [scripts addObject:script];
-    [scripts addObject:[MPScript javaScriptWithURL:url]];
+
+    NSURL *mathJaxURL = [bundle URLForResource:@"MathJax" withExtension:@"js"
+                                  subdirectory:@"MathJax"];
+    if (mathJaxURL)
+        [scripts addObject:[MPScript javaScriptWithURL:mathJaxURL]];
     return scripts;
 }
 
@@ -464,7 +462,6 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 
 - (NSArray *)mermaidScripts
 {
-    // TODO
     NSMutableArray *scripts = [NSMutableArray array];
 
     {
@@ -481,7 +478,6 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
 
 - (NSArray *)graphvizScripts
 {
-    // TODO
     NSMutableArray *scripts = [NSMutableArray array];
 
     {
@@ -504,15 +500,11 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     if ([delegate rendererHasSyntaxHighlighting:self])
     {
         [stylesheets addObjectsFromArray:self.prismStylesheets];
-        // mermaid
-        if ([delegate rendererHasMermaid:self])
-        {
-            [stylesheets addObjectsFromArray:self.mermaidStylesheets];
-        }
-
     }
+    if ([delegate rendererHasMermaid:self])
+        [stylesheets addObjectsFromArray:self.mermaidStylesheets];
 
-    if ([delegate rendererCodeBlockAccesory:self] == MPCodeBlockAccessoryCustom)
+    if ([delegate rendererCodeBlockAccessory:self] == MPCodeBlockAccessoryCustom)
     {
         NSURL *url = MPExtensionURL(@"show-information", @"css");
         [stylesheets addObject:[MPStyleSheet CSSWithURL:url]];
@@ -532,17 +524,11 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     if ([d rendererHasSyntaxHighlighting:self])
     {
         [scripts addObjectsFromArray:self.prismScripts];
-        // mermaid
-        if ([d rendererHasMermaid:self])
-        {
-            [scripts addObjectsFromArray:self.mermaidScripts];
-        }
-        // graphviz
-        if ([d rendererHasGraphviz:self])
-        {
-            [scripts addObjectsFromArray:self.graphvizScripts];
-        }
     }
+    if ([d rendererHasMermaid:self])
+        [scripts addObjectsFromArray:self.mermaidScripts];
+    if ([d rendererHasGraphviz:self])
+        [scripts addObjectsFromArray:self.graphvizScripts];
     if ([d rendererHasMathJax:self])
         [scripts addObjectsFromArray:self.mathjaxScripts];
     return scripts;
@@ -716,7 +702,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     else if (!MPAreNilableStringsEqual(
             [d rendererStyleName:self], self.styleName))
         changed = YES;
-    else if ([d rendererCodeBlockAccesory:self] != self.codeBlockAccesory)
+    else if ([d rendererCodeBlockAccessory:self] != self.codeBlockAccessory)
         changed = YES;
 
     if (changed)
@@ -739,7 +725,7 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
     self.mermaid = [delegate rendererHasMermaid:self];
     self.graphviz = [delegate rendererHasGraphviz:self];
     self.highlightingThemeName = [delegate rendererHighlightingThemeName:self];
-    self.codeBlockAccesory = [delegate rendererCodeBlockAccesory:self];
+    self.codeBlockAccessory = [delegate rendererCodeBlockAccessory:self];
     self.templateName = templateName;
 }
 
@@ -762,16 +748,18 @@ NS_INLINE void MPFreeHTMLRenderer(hoedown_renderer *htmlRenderer)
         scriptsOption = MPAssetEmbedded;
         [styles addObjectsFromArray:self.prismStylesheets];
         [scripts addObjectsFromArray:self.prismScripts];
-        if ([self.delegate rendererHasMermaid:self])
-        {
-            [styles addObjectsFromArray:self.mermaidStylesheets];
-            [scripts addObjectsFromArray:self.mermaidScripts];
-        }
-        if ([self.delegate rendererHasGraphviz:self])
-        {
-            [scripts addObjectsFromArray:self.graphvizScripts];
-        }
-
+    }
+    if ([self.delegate rendererHasMermaid:self])
+    {
+        stylesOption = MPAssetEmbedded;
+        scriptsOption = MPAssetEmbedded;
+        [styles addObjectsFromArray:self.mermaidStylesheets];
+        [scripts addObjectsFromArray:self.mermaidScripts];
+    }
+    if ([self.delegate rendererHasGraphviz:self])
+    {
+        scriptsOption = MPAssetEmbedded;
+        [scripts addObjectsFromArray:self.graphvizScripts];
     }
     if ([self.delegate rendererHasMathJax:self])
     {

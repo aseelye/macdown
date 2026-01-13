@@ -44,3 +44,5 @@ typedef void (^MPDocumentOpenCompletionHandler)(
 );
 
 MPDocumentOpenCompletionHandler MPDocumentOpenCompletionEmpty(void);
+
+NSString *MPWriteDataToTemporaryFile(NSData *data, NSString *filename);

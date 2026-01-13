@@ -20,8 +20,8 @@ NSString * const kMPPlugInFileExtension = @"plugin";
 static NSString *MPDataRootDirectory()
 {
     static NSString *path = nil;
-    if (!path)
-    {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
         NSArray *paths =
             NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
                                                 NSUserDomainMask, YES);
@@ -30,7 +30,7 @@ static NSString *MPDataRootDirectory()
         NSDictionary *infoDictionary = [NSBundle mainBundle].infoDictionary;
         path = [NSString pathWithComponents:@[paths[0],
                                               infoDictionary[@"CFBundleName"]]];
-    }
+    });
     return path;
 }
 
@@ -87,16 +87,20 @@ NSString *(^MPFileNameHasExtensionProcessor(NSString *ext))(NSString *path)
 BOOL MPCharacterIsWhitespace(unichar character)
 {
     static NSCharacterSet *whitespaces = nil;
-    if (!whitespaces)
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
         whitespaces = [NSCharacterSet whitespaceCharacterSet];
+    });
     return [whitespaces characterIsMember:character];
 }
 
 BOOL MPCharacterIsNewline(unichar character)
 {
     static NSCharacterSet *newlines = nil;
-    if (!newlines)
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
         newlines = [NSCharacterSet newlineCharacterSet];
+    });
     return [newlines characterIsMember:character];
 }
 
@@ -128,7 +132,7 @@ NSURL *MPHighlightingThemeURLForName(NSString *name)
     NSURL *url = [bundle URLForResource:name withExtension:@"css"
                            subdirectory:@"Prism/themes"];
 
-    // Safty net: file not found, use default.
+    // Safety net: file not found, use default.
     if (!url)
     {
         url = [bundle URLForResource:@"prism" withExtension:@"css"
@@ -153,7 +157,33 @@ NSDictionary *MPGetDataMap(NSString *name)
     NSBundle *bundle = [NSBundle mainBundle];
     NSString *filePath = [bundle pathForResource:name ofType:@"map"
                                      inDirectory:@"Data"];
-    return [NSKeyedUnarchiver unarchiveObjectWithFile:filePath];
+    if (!filePath)
+        return nil;
+
+    NSData *data = [NSData dataWithContentsOfFile:filePath options:0 error:NULL];
+    if (!data.length)
+        return nil;
+
+    if (@available(macOS 10.13, *))
+    {
+        NSError *error = nil;
+        NSSet *allowedClasses = [NSSet setWithObjects:
+            [NSArray class], [NSDictionary class], [NSData class],
+            [NSNumber class], [NSString class], nil
+        ];
+        id object = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses
+                                                       fromData:data error:&error];
+        if ([object isKindOfClass:[NSDictionary class]])
+            return object;
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    id object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+#pragma clang diagnostic pop
+    if ([object isKindOfClass:[NSDictionary class]])
+        return object;
+    return nil;
 }
 
 id MPGetObjectFromJavaScript(NSString *code, NSString *variableName)
@@ -214,4 +244,20 @@ MPDocumentOpenCompletionHandler MPDocumentOpenCompletionEmpty(void)
         };
     });
     return handler;
+}
+
+NSString *MPWriteDataToTemporaryFile(NSData *data, NSString *filename)
+{
+    if (!data)
+        return nil;
+
+    if (!filename.length)
+    {
+        filename = [[NSProcessInfo processInfo] globallyUniqueString];
+    }
+
+    NSString *temp = NSTemporaryDirectory();
+    NSString *path = [temp stringByAppendingPathComponent:filename];
+    BOOL ok = [data writeToFile:path atomically:NO];
+    return ok ? path : nil;
 }

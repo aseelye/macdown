@@ -494,6 +494,10 @@ void pmh_markdown_to_elements(char *text, int extensions,
     parsing_elem->pos = 0;
     parsing_elem->end = text_copy_len;
     parsing_elem->next = NULL;
+    parsing_elem->children = NULL;
+    parsing_elem->all_elems_next = NULL;
+    parsing_elem->text_offset = 0;
+    parsing_elem->label = parsing_elem->address = parsing_elem->text = NULL;
     
     parser_data *p_data = mk_parser_data(
         text,
@@ -694,6 +698,7 @@ static pmh_realelement *mk_element(parser_data *p_data, pmh_element_type type,
     result->pos = pos;
     result->end = end;
     result->next = NULL;
+    result->children = NULL;
     result->text_offset = 0;
     result->label = result->address = result->text = NULL;
     
@@ -986,5 +991,4 @@ static void yy_input_func(char *buf, int *result, int max_size,
             p_data->offset = p_data->current_elem->pos;
     }
 }
-
 

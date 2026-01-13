@@ -8,7 +8,6 @@
 
 #import "MPMainController.h"
 #import <MASPreferences/MASPreferencesWindowController.h>
-#import <Sparkle/SUUpdater.h>
 #import "MPGlobals.h"
 #import "MPUtilities.h"
 #import "NSDocumentController+Document.h"
@@ -236,7 +235,7 @@ NS_INLINE void MPShowTreatIfNeeded(void)
 {
     if (self.preferences.filesToOpen.count || self.preferences.pipedContentFileToOpen)
         return NO;
-    return !self.preferences.supressesUntitledDocumentOnLaunch;
+    return !self.preferences.suppressesUntitledDocumentOnLaunch;
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
@@ -249,16 +248,6 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     [self openPendingPipedContent];
     [self openPendingFiles];
     MPShowTreatIfNeeded();
-}
-
-
-#pragma mark - SUUpdaterDelegate
-
-- (NSString *)feedURLStringForUpdater:(SUUpdater *)updater
-{
-    if (self.preferences.updateIncludesPreReleases)
-        return [NSBundle mainBundle].infoDictionary[@"SUBetaFeedURL"];
-    return [NSBundle mainBundle].infoDictionary[@"SUFeedURL"];
 }
 
 
