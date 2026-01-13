@@ -54,7 +54,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 | ID | Severity | Title | Status | Owner | Notes |
 | --- | --- | --- | --- | --- | --- |
-| F-001 | Critical | Unsafe toolbar action invocation | Not Started |  |  |
+| F-001 | Critical | Unsafe toolbar action invocation | Done |  | Safe dispatch + regression tests; local build/test/analyze confirmed. |
 | F-002 | High | `MPDocument` god-object decomposition | Not Started |  |  |
 | F-003 | High | Observer lifecycle safety (KVO/notifications) | Not Started |  |  |
 | F-004 | High | Preference canonicalization + migration | Not Started |  |  |
@@ -78,9 +78,12 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-001 — Unsafe toolbar action invocation (wrong IMP signature)
 
 - Severity: **Critical**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
-- Notes:
+- Notes: Implemented safe dispatch using `objc_msgSend` + method signature arity,
+  added `MacDownTests/MPToolbarControllerTests.m` and
+  `Tools/check_maintainability_invariants.sh`. Local `xcodebuild` build/test/analyze
+  confirmed.
 
 **Proof (call sites / flow)**
 - `MacDown/Code/Application/MPToolbarController.m:106` `-selectedToolbarItemGroupItem:`
@@ -108,7 +111,9 @@ Whether these become permanent CI checks will be decided as we close each item.
 **Verification**
 - Manual smoke: click every toolbar item/group segment repeatedly; confirm the
   correct action occurs and no crash.
-- Automated: add XCTest(s) covering toolbar dispatch path (details TBD).
+- Automated:
+  - Run `Tools/check_maintainability_invariants.sh`
+  - Run the test suite and confirm `MPToolbarControllerTests` passes.
 
 ---
 
@@ -517,4 +522,3 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 **Verification**
 - Build/test/analyze pass; preferences persist as expected.
-

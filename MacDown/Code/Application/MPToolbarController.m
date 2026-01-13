@@ -9,6 +9,8 @@
 #import "MPToolbarController.h"
 #import "MPDocument+Actions.h"
 
+#import <objc/message.h>
+
 
 static CGFloat itemWidth = 37;
 
@@ -110,12 +112,21 @@ static CGFloat itemWidth = 37;
     NSToolbarItemGroup *selectedGroup = self->toolbarItemIdentifierObjectDictionary[sender.identifier];
     NSToolbarItem *selectedItem = selectedGroup.subitems[selectedIndex];
     
-    // Invoke the toolbar item's action
-    // Must convert to IMP to let the compiler know about the method definition
     MPDocument *document = self.document;
-    IMP imp = [document methodForSelector:selectedItem.action];
-    void (*impFunc)(id) = (void *)imp;
-    impFunc(document);
+    SEL action = selectedItem.action;
+    if (!document || !action)
+        return;
+    if (![document respondsToSelector:action])
+        return;
+
+    NSMethodSignature *signature = [document methodSignatureForSelector:action];
+    NSUInteger argumentCount = signature.numberOfArguments;
+    if (argumentCount <= 2)
+    {
+        ((void (*)(id, SEL))objc_msgSend)(document, action);
+        return;
+    }
+    ((void (*)(id, SEL, id))objc_msgSend)(document, action, sender);
 }
 
 
