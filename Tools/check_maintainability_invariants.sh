@@ -71,6 +71,21 @@ check_no_matches \
     "hoedown/html\\.h|hoedown_html_patch\\.h" \
     "MacDown/Code/Document/MPDocument.m"
 
+check_no_matches \
+    "F-003: MPDocument KVO does not use NULL contexts" \
+    "context:NULL|context:\\(void \\*\\)0" \
+    "MacDown/Code/Document/MPDocument+Observers.m"
+
+check_no_matches \
+    "F-003: MPDocument KVO does not branch on observed object identity" \
+    "object == self\\.(editor|preferences)" \
+    "MacDown/Code/Document/MPDocument+Observers.m"
+
+check_no_matches \
+    "F-003: MPDocument KVO removals include explicit context" \
+    "removeObserver:self forKeyPath:key\\];" \
+    "MacDown/Code/Document/MPDocument+Observers.m"
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi

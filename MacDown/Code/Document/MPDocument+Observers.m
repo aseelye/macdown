@@ -20,49 +20,79 @@
 
 @implementation MPDocument (Observers)
 
+static void * const MPDocumentPreferencesKVOContext =
+    (void *)&MPDocumentPreferencesKVOContext;
+static void * const MPDocumentEditorKVOContext =
+    (void *)&MPDocumentEditorKVOContext;
+
 #pragma mark - Observers
 
 - (void)registerObservers
 {
+    if (self.observersRegistered)
+        return;
+    self.observersRegistered = YES;
+
     MPPreferences *preferences = self.preferences;
     for (NSString *key in MPPreferencesKeysToObserve())
     {
         [preferences addObserver:self forKeyPath:key
-                         options:NSKeyValueObservingOptionNew context:NULL];
-    }
-    for (NSString *key in MPEditorKeysToObserve())
-    {
-        [self.editor addObserver:self forKeyPath:key
-                         options:NSKeyValueObservingOptionNew context:NULL];
+                         options:NSKeyValueObservingOptionNew
+                         context:MPDocumentPreferencesKVOContext];
     }
 
-    NSScrollView *editorScrollView = self.editor.enclosingScrollView;
-    NSClipView *editorClipView = editorScrollView.contentView;
+    MPEditorView *editor = self.editor;
+    if (editor)
+    {
+        for (NSString *key in MPEditorKeysToObserve())
+        {
+            [editor addObserver:self forKeyPath:key
+                        options:NSKeyValueObservingOptionNew
+                        context:MPDocumentEditorKVOContext];
+        }
+    }
 
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-    [center addObserver:self selector:@selector(editorTextDidChange:)
-                   name:NSTextDidChangeNotification object:self.editor];
-    [center addObserver:self selector:@selector(editorBoundsDidChange:)
-                   name:NSViewBoundsDidChangeNotification
-                 object:editorClipView];
-    [center addObserver:self selector:@selector(editorFrameDidChange:)
-                   name:NSViewFrameDidChangeNotification object:self.editor];
+    if (editor)
+    {
+        NSScrollView *editorScrollView = editor.enclosingScrollView;
+        NSClipView *editorClipView = editorScrollView.contentView;
+
+        [center addObserver:self selector:@selector(editorTextDidChange:)
+                       name:NSTextDidChangeNotification object:editor];
+        if (editorClipView)
+        {
+            [center addObserver:self selector:@selector(editorBoundsDidChange:)
+                           name:NSViewBoundsDidChangeNotification
+                         object:editorClipView];
+        }
+        [center addObserver:self selector:@selector(editorFrameDidChange:)
+                       name:NSViewFrameDidChangeNotification object:editor];
+
+        if (editorScrollView)
+        {
+            [center addObserver:self selector:@selector(willStartLiveScroll:)
+                           name:NSScrollViewWillStartLiveScrollNotification
+                         object:editorScrollView];
+            [center addObserver:self selector:@selector(didEndLiveScroll:)
+                           name:NSScrollViewDidEndLiveScrollNotification
+                         object:editorScrollView];
+        }
+    }
     [center addObserver:self selector:@selector(didRequestEditorReload:)
                    name:MPDidRequestEditorSetupNotification object:nil];
     [center addObserver:self selector:@selector(didRequestPreviewReload:)
                    name:MPDidRequestPreviewRenderNotification object:nil];
-    [center addObserver:self selector:@selector(willStartLiveScroll:)
-                   name:NSScrollViewWillStartLiveScrollNotification
-                 object:editorScrollView];
-    [center addObserver:self selector:@selector(didEndLiveScroll:)
-                   name:NSScrollViewDidEndLiveScrollNotification
-                 object:editorScrollView];
+
     if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber10_9)
     {
         NSScrollView *previewScrollView = self.preview.enclosingScrollView;
-        [center addObserver:self selector:@selector(previewDidLiveScroll:)
-                       name:NSScrollViewDidEndLiveScrollNotification
-                     object:previewScrollView];
+        if (previewScrollView)
+        {
+            [center addObserver:self selector:@selector(previewDidLiveScroll:)
+                           name:NSScrollViewDidEndLiveScrollNotification
+                         object:previewScrollView];
+        }
     }
 }
 
@@ -70,11 +100,22 @@
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 
+    if (!self.observersRegistered)
+        return;
+    self.observersRegistered = NO;
+
     MPPreferences *preferences = self.preferences;
     for (NSString *key in MPPreferencesKeysToObserve())
-        [preferences removeObserver:self forKeyPath:key];
-    for (NSString *key in MPEditorKeysToObserve())
-        [self.editor removeObserver:self forKeyPath:key];
+        [preferences removeObserver:self forKeyPath:key
+                            context:MPDocumentPreferencesKVOContext];
+
+    MPEditorView *editor = self.editor;
+    if (editor)
+    {
+        for (NSString *key in MPEditorKeysToObserve())
+            [editor removeObserver:self forKeyPath:key
+                           context:MPDocumentEditorKVOContext];
+    }
 }
 
 #pragma mark - Notification handlers
@@ -167,7 +208,9 @@
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object
                         change:(NSDictionary *)change context:(void *)context
 {
-    if (object == self.editor)
+    (void)object;
+
+    if (context == MPDocumentEditorKVOContext)
     {
         if (!self.highlighter.isActive)
             return;
@@ -176,7 +219,7 @@
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         [defaults setObject:value forKey:preferenceKey];
     }
-    else if (object == self.preferences)
+    else if (context == MPDocumentPreferencesKVOContext)
     {
         if (self.highlighter.isActive)
             [self setupEditor:keyPath];
@@ -189,6 +232,12 @@
 
         if ([MPRendererPreferencesToObserve() containsObject:keyPath])
             [self renderingPreferencesDidChange];
+    }
+    else
+    {
+        // Ignore unknown KVO contexts to avoid exceptions during teardown or
+        // when other subsystems observe the same objects.
+        return;
     }
 }
 

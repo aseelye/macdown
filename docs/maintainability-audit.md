@@ -42,6 +42,7 @@ An item is **Done** only when all are true:
 These should return no matches once the corresponding items are **Done**:
 
 - `rg -n "methodForSelector\\(|impFunc\\(" MacDown/Code/Application`
+- `rg -n "context:NULL|context:\\(void \\*\\)0" MacDown/Code/Document/MPDocument+Observers.m`
 - `rg -n "\\bsupressesUntitledDocumentOnLaunch\\b|\\bextensionStrikethough\\b" MacDown/Code`
 - `rg -n "\\bvalueForKey:fromQueryItems:\\b" MacDown/Code/Application`
 - `rg -n "NSFilenamesPboardType|NSDragPboard" MacDown/Code/View/MPEditorView.m`
@@ -56,7 +57,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | --- | --- | --- | --- | --- | --- |
 | F-001 | Critical | Unsafe toolbar action invocation | Done |  | Safe dispatch + regression tests; local build/test/analyze confirmed. |
 | F-002 | High | `MPDocument` god-object decomposition | Done |  | Extracted editor/observer logic into categories; added invariants (LOC + no embedded observer/editor impls). |
-| F-003 | High | Observer lifecycle safety (KVO/notifications) | Not Started |  |  |
+| F-003 | High | Observer lifecycle safety (KVO/notifications) | Done |  | KVO uses explicit contexts; teardown is idempotent; regression tests added. |
 | F-004 | High | Preference canonicalization + migration | Not Started |  |  |
 | F-005 | Med | Editor view state persistence layering | Not Started |  |  |
 | F-006 | Med | Renderer flags ownership clarity | Not Started |  |  |
@@ -157,15 +158,16 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-003 — Observer lifecycle safety (KVO + notifications teardown)
 
 - Severity: **High**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof (call sites / flow)**
-- Registers observers: `MacDown/Code/Document/MPDocument+Observers.m:21`
-- Unregisters observers: `MacDown/Code/Document/MPDocument+Observers.m:61`
-- Teardown gated by a flag: `MacDown/Code/Document/MPDocument.m:212`
-- KVO handler: `MacDown/Code/Document/MPDocument+Observers.m:158`
+- Registers observers: `MacDown/Code/Document/MPDocument+Observers.m:30`
+- Unregisters observers: `MacDown/Code/Document/MPDocument+Observers.m:99`
+- Teardown still gated by a flag: `MacDown/Code/Document/MPDocument.m:212`
+- KVO handler uses contexts: `MacDown/Code/Document/MPDocument+Observers.m:208`
+- Regression coverage (idempotence + preference toggle): `MacDownTests/MPDocumentObserverLifecycleTests.m:47`
 
 **Problem**
 - Observer teardown is easy to get wrong; repeated close/re-entrancy can leave
@@ -182,7 +184,8 @@ Whether these become permanent CI checks will be decided as we close each item.
   relevant preferences without KVO exceptions.
 
 **Verification**
-- Stress test open/close documents + toggle editor/render preferences.
+- Unit: `MacDownTests/MPDocumentObserverLifecycleTests.m:47` passes.
+- Manual: stress open/close documents + toggle editor/render preferences.
 - `xcodebuild test` and `xcodebuild analyze` pass.
 
 ---

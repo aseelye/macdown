@@ -81,6 +81,7 @@
 		1FF207631941CF22005B5654 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FF207621941CF22005B5654 /* WebKit.framework */; };
 		1FFEB31919729F7C00B2254F /* MPAssetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1FFEB31819729F7C00B2254F /* MPAssetTests.m */; };
 		1DE31F095A6346F7BB0CC822 /* MPToolbarControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6119B9492C9C44DA89D2FD43 /* MPToolbarControllerTests.m */; };
+		A1B2C3D4E5F60718293A4B5D /* MPDocumentObserverLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* MPDocumentObserverLifecycleTests.m */; };
 		1FFEB31D19729FEF00B2254F /* test.css in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31C19729FEF00B2254F /* test.css */; };
 		1FFEB31E1972A28400B2254F /* test.js in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31A19729FD500B2254F /* test.js */; };
 		1FFEB3201972B04D00B2254F /* test.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1FFEB31F1972B04D00B2254F /* test.txt */; };
@@ -494,6 +495,7 @@
 		1FF207621941CF22005B5654 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		1FFEB31819729F7C00B2254F /* MPAssetTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPAssetTests.m; sourceTree = "<group>"; };
 		6119B9492C9C44DA89D2FD43 /* MPToolbarControllerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPToolbarControllerTests.m; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* MPDocumentObserverLifecycleTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPDocumentObserverLifecycleTests.m; sourceTree = "<group>"; };
 		1FFEB31A19729FD500B2254F /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		1FFEB31C19729FEF00B2254F /* test.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = test.css; sourceTree = "<group>"; };
 		1FFEB31F1972B04D00B2254F /* test.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.txt; sourceTree = "<group>"; };
@@ -892,6 +894,7 @@
 				1F9F0A112C2A5F3E00BEEF04 /* MPMarkdownPreprocessorTests.m */,
 				1F9F0A162C2A5F3E00BEEF09 /* MPUserDefaultsSuiteTests.m */,
 				6119B9492C9C44DA89D2FD43 /* MPToolbarControllerTests.m */,
+				A1B2C3D4E5F60718293A4B5C /* MPDocumentObserverLifecycleTests.m */,
 				1FCDCA371944F97800B1F966 /* Supporting Files */,
 			);
 			path = MacDownTests;
@@ -1323,6 +1326,7 @@
 				1F9F0A172C2A5F3E00BEEF0A /* MPUserDefaultsSuiteTests.m in Sources */,
 				1FFF301D1948A5320009AF24 /* MPStringLookupTests.m in Sources */,
 				1DE31F095A6346F7BB0CC822 /* MPToolbarControllerTests.m in Sources */,
+				A1B2C3D4E5F60718293A4B5D /* MPDocumentObserverLifecycleTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

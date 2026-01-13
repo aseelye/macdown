@@ -156,6 +156,7 @@ NS_INLINE BOOL MPPreferenceKeyAffectsDivider(NSString *key)
 @property (nonatomic) BOOL renderToWebPending;
 @property (strong) MPScrollSyncController *scrollSyncController;
 @property (nonatomic) BOOL inLiveScroll;
+@property (nonatomic) BOOL observersRegistered;
 
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
