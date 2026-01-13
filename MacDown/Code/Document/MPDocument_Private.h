@@ -22,6 +22,108 @@ typedef NS_ENUM(NSUInteger, MPWordCountType)
     MPWordCountTypeCharacterNoSpaces,
 };
 
+NS_INLINE NSString *MPEditorPreferenceKeyWithValueKey(NSString *key)
+{
+    if (!key.length)
+        return @"editor";
+    NSString *first = [[key substringToIndex:1] uppercaseString];
+    NSString *rest = [key substringFromIndex:1];
+    return [NSString stringWithFormat:@"editor%@%@", first, rest];
+}
+
+NS_INLINE NSDictionary *MPEditorKeysToObserve(void)
+{
+    static NSDictionary *keys = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        keys = @{@"automaticDashSubstitutionEnabled": @NO,
+                 @"automaticDataDetectionEnabled": @NO,
+                 @"automaticQuoteSubstitutionEnabled": @NO,
+                 @"automaticSpellingCorrectionEnabled": @NO,
+                 @"automaticTextReplacementEnabled": @NO,
+                 @"continuousSpellCheckingEnabled": @NO,
+                 @"enabledTextCheckingTypes": @(NSTextCheckingAllTypes),
+                 @"grammarCheckingEnabled": @NO};
+    });
+    return keys;
+}
+
+NS_INLINE NSSet *MPEditorPreferencesToObserve(void)
+{
+    static NSSet *keys = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        keys = [NSSet setWithObjects:
+            @"editorBaseFontInfo", @"extensionFootnotes",
+            @"editorHorizontalInset", @"editorVerticalInset",
+            @"editorWidthLimited", @"editorMaximumWidth", @"editorLineSpacing",
+            @"editorOnRight", @"editorStyleName", @"editorShowWordCount",
+            @"editorScrollsPastEnd", nil
+        ];
+    });
+    return keys;
+}
+
+NS_INLINE NSSet *MPRendererPreferencesToObserve(void)
+{
+    static NSSet *keys = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        keys = [NSSet setWithObjects:
+            @"markdownManualRender",
+
+            @"extensionIntraEmphasis", @"extensionTables", @"extensionFencedCode",
+            @"extensionAutolink", @"extensionStrikethough",
+            @"extensionStrikethrough", @"extensionUnderline",
+            @"extensionSuperscript", @"extensionHighlight", @"extensionFootnotes",
+            @"extensionQuote", @"extensionSmartyPants",
+
+            @"htmlTemplateName", @"htmlStyleName", @"htmlDetectFrontMatter",
+            @"htmlTaskList", @"htmlHardWrap", @"htmlMathJax",
+            @"htmlMathJaxInlineDollar", @"htmlSyntaxHighlighting",
+            @"htmlHighlightingThemeName", @"htmlLineNumbers", @"htmlGraphviz",
+            @"htmlMermaid", @"htmlCodeBlockAccessory", @"htmlDefaultDirectoryUrl",
+            @"htmlRendersTOC",
+            nil
+        ];
+    });
+    return keys;
+}
+
+NS_INLINE NSSet *MPPreviewPreferencesToObserve(void)
+{
+    static NSSet *keys = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        keys = [NSSet setWithObjects:
+            @"previewZoomRelativeToBaseFontSize",
+            nil
+        ];
+    });
+    return keys;
+}
+
+NS_INLINE NSSet *MPPreferencesKeysToObserve(void)
+{
+    static NSSet *keys = nil;
+    static dispatch_once_t token;
+    dispatch_once(&token, ^{
+        NSMutableSet *combined =
+            [NSMutableSet setWithSet:MPEditorPreferencesToObserve()];
+        [combined unionSet:MPRendererPreferencesToObserve()];
+        [combined unionSet:MPPreviewPreferencesToObserve()];
+        keys = [combined copy];
+    });
+    return keys;
+}
+
+NS_INLINE BOOL MPPreferenceKeyAffectsDivider(NSString *key)
+{
+    return ([key isEqualToString:@"editorStyleName"]
+            || [key isEqualToString:@"htmlStyleName"]
+            || [key isEqualToString:@"editorOnRight"]);
+}
+
 @interface MPDocument ()
 
 @property (weak) IBOutlet NSToolbar *toolbar;
@@ -57,6 +159,11 @@ typedef NS_ENUM(NSUInteger, MPWordCountType)
 
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
+
+- (void)registerObservers;
+- (void)unregisterObservers;
+- (void)redrawDivider;
+- (void)adjustEditorInsets;
 
 - (void)setupEditor:(NSString *)changedKey;
 - (NSString *)presumedFileName;

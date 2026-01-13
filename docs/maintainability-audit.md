@@ -1,6 +1,6 @@
 # Maintainability Audit Backlog
 
-Last updated: 2026-01-12
+Last updated: 2026-01-13
 
 This document tracks maintainability findings and provides a concrete, verifiable
 definition of “fixed” for each item. The goal is that **Critical/High** issues
@@ -55,7 +55,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | ID | Severity | Title | Status | Owner | Notes |
 | --- | --- | --- | --- | --- | --- |
 | F-001 | Critical | Unsafe toolbar action invocation | Done |  | Safe dispatch + regression tests; local build/test/analyze confirmed. |
-| F-002 | High | `MPDocument` god-object decomposition | Not Started |  |  |
+| F-002 | High | `MPDocument` god-object decomposition | Done |  | Extracted editor/observer logic into categories; added invariants (LOC + no embedded observer/editor impls). |
 | F-003 | High | Observer lifecycle safety (KVO/notifications) | Not Started |  |  |
 | F-004 | High | Preference canonicalization + migration | Not Started |  |  |
 | F-005 | Med | Editor view state persistence layering | Not Started |  |  |
@@ -64,7 +64,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Not Started |  |  |
 | F-009 | Med | URL scheme handler unfinished (line/column) | Not Started |  |  |
 | F-010 | Low-Med | Heading IBAction boilerplate duplication | Not Started |  |  |
-| F-011 | Low-Med | `MPDocument` imports hoedown/parser concerns | Not Started |  |  |
+| F-011 | Low-Med | `MPDocument` imports hoedown/parser concerns | Done |  | `MPDocument.m` no longer imports hoedown; parsing remains behind `MPRenderer`. |
 | F-012 | Med | Scroll sync header detection duplication/drift | Not Started |  |  |
 | F-013 | Med | `MPUtilities` grab-bag split by domain | Not Started |  |  |
 | F-014 | Med | Prism dependency parsing via JS evaluation | Not Started |  |  |
@@ -120,14 +120,18 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-002 — `MPDocument` is a “god object” (multi-responsibility + oversized)
 
 - Severity: **High**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
-- Notes:
+- Notes: Decomposed `MPDocument.m` into focused categories and added an invariant
+  to prevent regressing the file back into a multi-responsibility “god file”.
 
 **Proof**
-- `MacDown/Code/Document/MPDocument.m:166` implements many delegate protocols.
-- Current file size is large and mixes persistence, rendering, KVO, editor
-  configuration, printing, and UI.
+- `MacDown/Code/Document/MPDocument.m` is now <700 LOC (currently ~472).
+- Observer + KVO logic lives in `MacDown/Code/Document/MPDocument+Observers.m`.
+- Editor setup + NSTextView/NSSplitView delegate logic lives in
+  `MacDown/Code/Document/MPDocument+Editor.m`.
+- Renderer data source/delegate + preview scaling/word count live in
+  `MacDown/Code/Document/MPDocument+Preview.m`.
 
 **Problem**
 - Large surface area makes safe change difficult; responsibilities are tightly
@@ -145,6 +149,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 **Verification**
 - Build/test/analyze pass.
+- `Tools/check_maintainability_invariants.sh` passes (enforces F-002).
 - Manual: open/save/export/print/scroll-sync/word-count behavior remains correct.
 
 ---
@@ -157,10 +162,10 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Notes:
 
 **Proof (call sites / flow)**
-- Registers observers: `MacDown/Code/Document/MPDocument.m:376`–`MacDown/Code/Document/MPDocument.m:414`
-- Unregisters observers: `MacDown/Code/Document/MPDocument.m:416`–`MacDown/Code/Document/MPDocument.m:425`
-- Teardown gated by a flag: `MacDown/Code/Document/MPDocument.m:352`–`MacDown/Code/Document/MPDocument.m:371`
-- KVO handler: `MacDown/Code/Document/MPDocument.m:925`–`MacDown/Code/Document/MPDocument.m:950`
+- Registers observers: `MacDown/Code/Document/MPDocument+Observers.m:21`
+- Unregisters observers: `MacDown/Code/Document/MPDocument+Observers.m:61`
+- Teardown gated by a flag: `MacDown/Code/Document/MPDocument.m:212`
+- KVO handler: `MacDown/Code/Document/MPDocument+Observers.m:158`
 
 **Problem**
 - Observer teardown is easy to get wrong; repeated close/re-entrancy can leave
@@ -193,7 +198,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Misspelled stored keys: `MacDown/Code/Preferences/MPPreferences.h:19` (`supressesUntitledDocumentOnLaunch`),
   `MacDown/Code/Preferences/MPPreferences.h:30` (`extensionStrikethough`)
 - Alias accessors depend on misspelled storage: `MacDown/Code/Preferences/MPPreferences.m:90`–`MacDown/Code/Preferences/MPPreferences.m:108`
-- Both keys observed: `MacDown/Code/Document/MPDocument.m:93`–`MacDown/Code/Document/MPDocument.m:95`
+- Both keys observed: `MacDown/Code/Document/MPDocument_Private.h:75`
 
 **Problem**
 - The misspellings increase cognitive load and encourage duplication (multiple
@@ -221,7 +226,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Notes:
 
 **Proof (call sites / flow)**
-- KVO writes editor changes to defaults: `MacDown/Code/Document/MPDocument.m:925`–`MacDown/Code/Document/MPDocument.m:936`
+- KVO writes editor changes to defaults: `MacDown/Code/Document/MPDocument+Observers.m:158`
 
 **Problem**
 - The document layer is persisting view internals using stringly-typed key
@@ -250,7 +255,8 @@ Whether these become permanent CI checks will be decided as we close each item.
 **Proof**
 - Preferences provide flags: `MacDown/Code/Preferences/MPPreferences+Hoedown.h:11`
 - Renderer stores flags: `MacDown/Code/Document/MPRenderer.h:24`
-- Document syncs flags and triggers parse/render: `MacDown/Code/Document/MPDocument.m:846`–`MacDown/Code/Document/MPDocument.m:865`
+- Document syncs flags and triggers parse/render: `MacDown/Code/Document/MPDocument+Observers.m:80`
+  (initial sync: `MacDown/Code/Document/MPDocument.m:156`)
 
 **Problem**
 - Unclear ownership increases risk of stale state and redundant updates.
@@ -277,7 +283,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 **Proof**
 - K&R `@synchronized`: `MacDown/Code/View/MPEditorView.m:37`
 - K&R `if` blocks: `MacDown/Code/Application/MPMainController.m:118`
-- K&R `@synchronized`: `MacDown/Code/Document/MPDocument.m:891`
+- K&R `@synchronized`: `MacDown/Code/Document/MPDocument+Observers.m:125`
 
 **Problem**
 - Inconsistent styling increases diff noise and slows review/refactor work.
@@ -374,12 +380,13 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-011 — `MPDocument` imports renderer internals (hoedown concerns)
 
 - Severity: **Low–Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
-- Notes:
+- Notes: `MPDocument.m` no longer imports hoedown headers; parsing remains in
+  `MPRenderer`/preferences categories.
 
 **Proof**
-- `MacDown/Code/Document/MPDocument.m:12` and `MacDown/Code/Document/MPDocument.m:13`
+- Parser imports now live in `MacDown/Code/Document/MPRenderer.m:11`.
 
 **Problem**
 - Layering violation: document coordinator should not depend on parser details.

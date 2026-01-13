@@ -96,6 +96,8 @@
 		905EF1B7196164F300FC3CE9 /* macdown in Copy Command Line Utility */ = {isa = PBXBuildFile; fileRef = 905EF1A7196164CA00FC3CE9 /* macdown */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9F3E0A1B2C2D3E4F5A6B7C91 /* MPDocument+Actions.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7C8E /* MPDocument+Actions.m */; };
 		9F3E0A1B2C2D3E4F5A6B7C92 /* MPDocument+Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7C8F /* MPDocument+Preview.m */; };
+		9F3E0A1B2C2D3E4F5A6B7C95 /* MPDocument+Editor.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7C93 /* MPDocument+Editor.m */; };
+		9F3E0A1B2C2D3E4F5A6B7C96 /* MPDocument+Observers.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7C94 /* MPDocument+Observers.m */; };
 		9F3E0A1B2C2D3E4F5A6B7CA2 /* MPPreferences+Hoedown.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7CA1 /* MPPreferences+Hoedown.m */; };
 		9F3E0A1B2C2D3E4F5A6B7CB2 /* WebView+MPSugar.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F3E0A1B2C2D3E4F5A6B7CB1 /* WebView+MPSugar.m */; };
 		B5C5C1666A506FEA86435D25 /* libPods-macdown-cmd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 263367245B2D78A42C2F19D7 /* libPods-macdown-cmd.a */; };
@@ -520,6 +522,8 @@
 		9F3E0A1B2C2D3E4F5A6B7C8E /* MPDocument+Actions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPDocument+Actions.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7C8F /* MPDocument+Preview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPDocument+Preview.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7C90 /* MPDocument_Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MPDocument_Private.h; sourceTree = "<group>"; };
+		9F3E0A1B2C2D3E4F5A6B7C93 /* MPDocument+Editor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPDocument+Editor.m"; sourceTree = "<group>"; };
+		9F3E0A1B2C2D3E4F5A6B7C94 /* MPDocument+Observers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPDocument+Observers.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CA0 /* MPPreferences+Hoedown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MPPreferences+Hoedown.h"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CA1 /* MPPreferences+Hoedown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPPreferences+Hoedown.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CB0 /* WebView+MPSugar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebView+MPSugar.h"; sourceTree = "<group>"; };
@@ -678,6 +682,8 @@
 				9F3E0A1B2C2D3E4F5A6B7C8D /* MPDocument+Actions.h */,
 				9F3E0A1B2C2D3E4F5A6B7C8E /* MPDocument+Actions.m */,
 				9F3E0A1B2C2D3E4F5A6B7C8F /* MPDocument+Preview.m */,
+				9F3E0A1B2C2D3E4F5A6B7C93 /* MPDocument+Editor.m */,
+				9F3E0A1B2C2D3E4F5A6B7C94 /* MPDocument+Observers.m */,
 				9F3E0A1B2C2D3E4F5A6B7C90 /* MPDocument_Private.h */,
 				1F9F0A132C2A5F3E00BEEF06 /* MPScrollSyncController.h */,
 				1F9F0A142C2A5F3E00BEEF07 /* MPScrollSyncController.m */,
@@ -1291,6 +1297,8 @@
 				1F0D9D93194AC852008E1856 /* MPDocument.m in Sources */,
 				9F3E0A1B2C2D3E4F5A6B7C91 /* MPDocument+Actions.m in Sources */,
 				9F3E0A1B2C2D3E4F5A6B7C92 /* MPDocument+Preview.m in Sources */,
+				9F3E0A1B2C2D3E4F5A6B7C95 /* MPDocument+Editor.m in Sources */,
+				9F3E0A1B2C2D3E4F5A6B7C96 /* MPDocument+Observers.m in Sources */,
 				1F9F0A152C2A5F3E00BEEF08 /* MPScrollSyncController.m in Sources */,
 				1F9F0A1A2C2A5F3E00BEEF0D /* MPWebKitWorkarounds.m in Sources */,
 				1F96BD801E584A03005E0456 /* MPHomebrewSubprocessController.m in Sources */,

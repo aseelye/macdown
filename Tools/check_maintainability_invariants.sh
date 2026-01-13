@@ -29,12 +29,47 @@ check_no_matches() {
     fi
 }
 
+check_max_lines() {
+    description="$1"
+    max_lines="$2"
+    path="$3"
+
+    if [ ! -f "$path" ]; then
+        echo "FAIL: $description"
+        echo "Missing file: $path"
+        fail=1
+        return
+    fi
+
+    lines="$(wc -l < "$path" | tr -d ' ')"
+    if [ "$lines" -gt "$max_lines" ]; then
+        echo "FAIL: $description"
+        echo "$path has $lines lines (max $max_lines)"
+        fail=1
+    fi
+}
+
 # Add checks here only after the corresponding finding is marked Done in
 # `docs/maintainability-audit.md`.
 check_no_matches \
     "F-001: no unsafe IMP dispatch in MPToolbarController" \
     "methodForSelector\\(|impFunc\\(" \
     "MacDown/Code/Application/MPToolbarController.m"
+
+check_max_lines \
+    "F-002: MPDocument.m stays under 700 lines" \
+    700 \
+    "MacDown/Code/Document/MPDocument.m"
+
+check_no_matches \
+    "F-002: MPDocument.m contains no observer/editor implementations" \
+    "^- \\(void\\)(registerObservers|unregisterObservers|editorTextDidChange:|renderingPreferencesDidChange|observeValueForKeyPath:|setupEditor:|adjustEditorInsets|redrawDivider|updateWordCount|scaleWebview)" \
+    "MacDown/Code/Document/MPDocument.m"
+
+check_no_matches \
+    "F-011: MPDocument.m does not import hoedown" \
+    "hoedown/html\\.h|hoedown_html_patch\\.h" \
+    "MacDown/Code/Document/MPDocument.m"
 
 if [ "$fail" -ne 0 ]; then
     exit 1

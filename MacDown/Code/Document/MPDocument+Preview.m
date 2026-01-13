@@ -7,14 +7,17 @@
 
 #import <WebKit/WebKit.h>
 
+#import "MPEditorView.h"
 #import "MPMathJaxListener.h"
 #import "MPPreferences.h"
+#import "MPPreferences+Hoedown.h"
 #import "MPWebKitWorkarounds.h"
 #import "MPScrollSyncController.h"
 #import "MPRenderer.h"
 #import "WebView+MPSugar.h"
 #import "NSDocumentController+Document.h"
 #import "NSPasteboard+Types.h"
+#import "DOMNode+Text.h"
 #import "NSString+Lookup.h"
 
 @implementation MPDocument (Preview)
@@ -124,6 +127,36 @@ current file somewhere to enable this feature.", \
     self.renderToWebPending = NO;
 }
 
+#pragma mark - Preview utilities
+
+- (void)updateWordCount
+{
+    DOMNodeTextCount count = self.preview.mainFrame.DOMDocument.textCount;
+
+    self.totalWords = count.words;
+    self.totalCharacters = count.characters;
+    self.totalCharactersNoSpaces = count.characterWithoutSpaces;
+
+    if (self.isPreviewReady)
+        self.wordCountWidget.enabled = YES;
+}
+
+- (void)scaleWebview
+{
+    if (!self.preferences.previewZoomRelativeToBaseFontSize)
+        return;
+
+    CGFloat fontSize = self.preferences.editorBaseFontSize;
+    if (fontSize <= 0.0)
+        return;
+
+    static const CGFloat defaultSize = 14.0;
+    CGFloat scale = fontSize / defaultSize;
+
+    // Warning: this is private webkit API and NOT App Store-safe!
+    MPSetLegacyWebViewPageScaleMultiplier(self.preview, scale);
+}
+
 #pragma mark - WebPolicyDelegate
 
 - (void)webView:(WebView *)webView
@@ -189,7 +222,79 @@ current file somewhere to enable this feature.", \
     return self.preview.loading;
 }
 
+- (NSString *)rendererMarkdown:(MPRenderer *)renderer
+{
+    return self.editor.string;
+}
+
+- (NSString *)rendererHTMLTitle:(MPRenderer *)renderer
+{
+    NSString *n = self.fileURL.lastPathComponent.stringByDeletingPathExtension;
+    return n ? n : @"";
+}
+
 #pragma mark - MPRendererDelegate
+
+- (int)rendererExtensions:(MPRenderer *)renderer
+{
+    return self.preferences.extensionFlags;
+}
+
+- (BOOL)rendererHasSmartyPants:(MPRenderer *)renderer
+{
+    return self.preferences.extensionSmartyPants;
+}
+
+- (BOOL)rendererRendersTOC:(MPRenderer *)renderer
+{
+    return self.preferences.htmlRendersTOC;
+}
+
+- (NSString *)rendererTemplateName:(MPRenderer *)renderer
+{
+    NSString *name = self.preferences.htmlTemplateName;
+    return name.length ? name : @"Default";
+}
+
+- (NSString *)rendererStyleName:(MPRenderer *)renderer
+{
+    return self.preferences.htmlStyleName;
+}
+
+- (BOOL)rendererDetectsFrontMatter:(MPRenderer *)renderer
+{
+    return self.preferences.htmlDetectFrontMatter;
+}
+
+- (BOOL)rendererHasSyntaxHighlighting:(MPRenderer *)renderer
+{
+    return self.preferences.htmlSyntaxHighlighting;
+}
+
+- (BOOL)rendererHasMermaid:(MPRenderer *)renderer
+{
+    return self.preferences.htmlMermaid;
+}
+
+- (BOOL)rendererHasGraphviz:(MPRenderer *)renderer
+{
+    return self.preferences.htmlGraphviz;
+}
+
+- (MPCodeBlockAccessoryType)rendererCodeBlockAccessory:(MPRenderer *)renderer
+{
+    return self.preferences.htmlCodeBlockAccessory;
+}
+
+- (BOOL)rendererHasMathJax:(MPRenderer *)renderer
+{
+    return self.preferences.htmlMathJax;
+}
+
+- (NSString *)rendererHighlightingThemeName:(MPRenderer *)renderer
+{
+    return self.preferences.htmlHighlightingThemeName;
+}
 
 - (void)renderer:(MPRenderer *)renderer didProduceHTMLOutput:(NSString *)html
 {
@@ -214,7 +319,7 @@ current file somewhere to enable this feature.", \
     }
 
     NSURL *baseUrl = self.fileURL;
-    if (!baseUrl)   // Unsaved doument; just use the default URL.
+    if (!baseUrl)   // Unsaved document; just use the default URL.
         baseUrl = self.preferences.htmlDefaultDirectoryUrl;
 
     self.manualRender = self.preferences.markdownManualRender;
