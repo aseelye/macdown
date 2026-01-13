@@ -22,32 +22,6 @@ typedef NS_ENUM(NSUInteger, MPWordCountType)
     MPWordCountTypeCharacterNoSpaces,
 };
 
-NS_INLINE NSString *MPEditorPreferenceKeyWithValueKey(NSString *key)
-{
-    if (!key.length)
-        return @"editor";
-    NSString *first = [[key substringToIndex:1] uppercaseString];
-    NSString *rest = [key substringFromIndex:1];
-    return [NSString stringWithFormat:@"editor%@%@", first, rest];
-}
-
-NS_INLINE NSDictionary *MPEditorKeysToObserve(void)
-{
-    static NSDictionary *keys = nil;
-    static dispatch_once_t token;
-    dispatch_once(&token, ^{
-        keys = @{@"automaticDashSubstitutionEnabled": @NO,
-                 @"automaticDataDetectionEnabled": @NO,
-                 @"automaticQuoteSubstitutionEnabled": @NO,
-                 @"automaticSpellingCorrectionEnabled": @NO,
-                 @"automaticTextReplacementEnabled": @NO,
-                 @"continuousSpellCheckingEnabled": @NO,
-                 @"enabledTextCheckingTypes": @(NSTextCheckingAllTypes),
-                 @"grammarCheckingEnabled": @NO};
-    });
-    return keys;
-}
-
 NS_INLINE NSSet *MPEditorPreferencesToObserve(void)
 {
     static NSSet *keys = nil;

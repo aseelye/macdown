@@ -59,7 +59,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-002 | High | `MPDocument` god-object decomposition | Done |  | Extracted editor/observer logic into categories; added invariants (LOC + no embedded observer/editor impls). |
 | F-003 | High | Observer lifecycle safety (KVO/notifications) | Done |  | KVO uses explicit contexts; teardown is idempotent; regression tests added. |
 | F-004 | High | Preference canonicalization + migration | Done |  | Migrated legacy defaults keys; updated bindings/observers; migration regression tests added. |
-| F-005 | Med | Editor view state persistence layering | Not Started |  |  |
+| F-005 | Med | Editor view state persistence layering | Done |  | Persisted editor behavior moved to preferences API; regression tests added. |
 | F-006 | Med | Renderer flags ownership clarity | Not Started |  |  |
 | F-007 | Med | Style consistency within touched files | Not Started |  |  |
 | F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Not Started |  |  |
@@ -232,12 +232,17 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-005 — Editor view state persistence via KVO/KVC (leaky layering)
 
 - Severity: **Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof (call sites / flow)**
-- KVO writes editor changes to defaults: `MacDown/Code/Document/MPDocument+Observers.m:158`
+- Editor KVO persists via preferences API (no direct defaults writes):
+  `MacDown/Code/Document/MPDocument+Observers.m:223`
+- Editor setup applies persisted values via preferences API:
+  `MacDown/Code/Document/MPDocument+Editor.m:303`
+- Persistence API centralized:
+  `MacDown/Code/Preferences/MPPreferences+EditorBehavior.m:10`
 
 **Problem**
 - The document layer is persisting view internals using stringly-typed key
@@ -252,6 +257,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Editor settings persistence remains functional.
 
 **Verification**
+- Unit: `MacDownTests/MPPreferencesEditorBehaviorTests.m:50` passes.
 - Manual: editor settings persist across launches; no runtime KVC/KVO exceptions.
 
 ---

@@ -14,6 +14,7 @@
 #import "MPScrollSyncController.h"
 
 #import "MPPreferences.h"
+#import "MPPreferences+EditorBehavior.h"
 #import "MPPreferences+Hoedown.h"
 #import "MPPreferencesViewController.h"
 #import "MPEditorPreferencesViewController.h"
@@ -44,7 +45,9 @@ static void * const MPDocumentEditorKVOContext =
     MPEditorView *editor = self.editor;
     if (editor)
     {
-        for (NSString *key in MPEditorKeysToObserve())
+        NSDictionary *keysAndDefaults =
+            [MPPreferences editorBehaviorKeysAndDefaultValues];
+        for (NSString *key in keysAndDefaults)
         {
             [editor addObserver:self forKeyPath:key
                         options:NSKeyValueObservingOptionNew
@@ -112,7 +115,9 @@ static void * const MPDocumentEditorKVOContext =
     MPEditorView *editor = self.editor;
     if (editor)
     {
-        for (NSString *key in MPEditorKeysToObserve())
+        NSDictionary *keysAndDefaults =
+            [MPPreferences editorBehaviorKeysAndDefaultValues];
+        for (NSString *key in keysAndDefaults)
             [editor removeObserver:self forKeyPath:key
                            context:MPDocumentEditorKVOContext];
     }
@@ -215,9 +220,7 @@ static void * const MPDocumentEditorKVOContext =
         if (!self.highlighter.isActive)
             return;
         id value = change[NSKeyValueChangeNewKey];
-        NSString *preferenceKey = MPEditorPreferenceKeyWithValueKey(keyPath);
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setObject:value forKey:preferenceKey];
+        [self.preferences persistEditorBehaviorValue:value forKey:keyPath];
     }
     else if (context == MPDocumentPreferencesKVOContext)
     {

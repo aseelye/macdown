@@ -131,6 +131,16 @@ check_no_matches \
     "supressesUntitledDocumentOnLaunch|extensionStrikethough" \
     "MacDown/Localization/Base.lproj"
 
+check_no_matches \
+    "F-005: MPDocument editor KVO does not touch NSUserDefaults" \
+    "NSUserDefaults|standardUserDefaults" \
+    "MacDown/Code/Document/MPDocument+Observers.m"
+
+check_no_matches \
+    "F-005: MPDocument editor setup does not touch NSUserDefaults" \
+    "NSUserDefaults|standardUserDefaults" \
+    "MacDown/Code/Document/MPDocument+Editor.m"
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi

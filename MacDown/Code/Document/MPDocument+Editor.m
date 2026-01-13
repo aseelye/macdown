@@ -12,6 +12,7 @@
 #import "MPDocumentSplitView.h"
 #import "MPEditorView.h"
 #import "MPPreferences.h"
+#import "MPPreferences+EditorBehavior.h"
 #import "MPUtilities.h"
 #import "NSColor+HTML.h"
 #import "NSTextView+Autocomplete.h"
@@ -299,16 +300,7 @@ NS_INLINE NSColor *MPGetWebViewBackgroundColor(WebView *webview)
     {
         NSClipView *contentView = self.editor.enclosingScrollView.contentView;
         contentView.postsBoundsChangedNotifications = YES;
-
-        NSDictionary *keysAndDefaults = MPEditorKeysToObserve();
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        for (NSString *key in keysAndDefaults)
-        {
-            NSString *preferenceKey = MPEditorPreferenceKeyWithValueKey(key);
-            id value = [defaults objectForKey:preferenceKey];
-            value = value ? value : keysAndDefaults[key];
-            [self.editor setValue:value forKey:key];
-        }
+        [self.preferences applyEditorBehaviorDefaultsToEditor:self.editor];
     }
 }
 
