@@ -14,6 +14,8 @@
 - (NSUInteger)locationOfFirstNewlineAfter:(NSUInteger)location;
 - (NSUInteger)locationOfFirstNonWhitespaceCharacterInLineBefore:(NSUInteger)loc;
 
+- (NSUInteger)locationForLine:(NSUInteger)line column:(NSUInteger)column;
+
 - (NSArray *)matchesForPattern:(NSString *)pattern;
 
 - (id)frontMatter:(NSUInteger *)contentOffset;

@@ -63,7 +63,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-006 | Med | Renderer flags ownership clarity | Done |  | Flags now flow via renderer delegate; renderer caches html flags; regression tests + invariants added. |
 | F-007 | Med | Style consistency within touched files | Done |  | Normalized Allman brace style in `MPEditorView` and `MPMainController`; invariants added. |
 | F-008 | Med | Confusing selector name `valueForKey:fromQueryItems:` | Done |  | Renamed to query-specific selector; invariant added. |
-| F-009 | Med | URL scheme handler unfinished (line/column) | Not Started |  |  |
+| F-009 | Med | URL scheme handler unfinished (line/column) | Done |  | URL scheme now selects line/column when provided; no leftover FIXME/log noise. |
 | F-010 | Low-Med | Heading IBAction boilerplate duplication | Not Started |  |  |
 | F-011 | Low-Med | `MPDocument` imports hoedown/parser concerns | Done |  | `MPDocument.m` no longer imports hoedown; parsing remains behind `MPRenderer`. |
 | F-012 | Med | Scroll sync header detection duplication/drift | Not Started |  |  |
@@ -359,12 +359,15 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-009 — URL scheme handler has unfinished feature (line/column ignored)
 
 - Severity: **Med**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof**
-- FIXME and unused parameters: `MacDown/Code/Application/MPMainController.m:142`–`MacDown/Code/Application/MPMainController.m:148`
+- URL scheme handler parses `line`/`column` and reveals selection:
+  - `MacDown/Code/Application/MPMainController.m:150`
+  - `MacDown/Code/Document/MPDocument+Editor.m:180`
+  - `MacDown/Code/Extension/NSString+Lookup.m:48`
 
 **Problem**
 - Handler claims support for line/column but doesn’t implement it; adds noisy
@@ -376,9 +379,13 @@ Whether these become permanent CI checks will be decided as we close each item.
 
 **Acceptance criteria**
 - No FIXME remains; behavior is clearly defined and tested manually.
+- When `line` is provided, the editor selection moves to the requested
+  line/column (clamped to valid ranges).
 
 **Verification**
 - Manual: open `x-macdown://open?...` URLs and confirm expected behavior.
+- Unit: `MacDownTests/MPStringLookupTests.m:146` passes.
+- Invariants: `Tools/check_maintainability_invariants.sh` reports OK.
 
 ---
 

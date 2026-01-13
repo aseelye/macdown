@@ -21,4 +21,6 @@
 @property (nonatomic, readwrite) NSString *markdown;
 @property (nonatomic, readonly) NSString *html;
 
+- (void)revealLine:(NSUInteger)line column:(NSUInteger)column;
+
 @end

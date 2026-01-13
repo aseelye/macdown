@@ -204,6 +204,9 @@ NS_INLINE NSString *MPRectStringForAutosaveName(NSString *name)
         [self.renderer parseAndRenderNow];
         [self.highlighter parseAndHighlightNow];
     }
+
+    if (self.pendingRevealLine)
+        [self revealLine:self.pendingRevealLine column:self.pendingRevealColumn];
 }
 
 - (void)close

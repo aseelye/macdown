@@ -178,6 +178,11 @@ check_no_matches \
     "\\bvalueForKey:fromQueryItems:\\b" \
     "MacDown/Code/Application"
 
+check_no_matches \
+    "F-009: URL scheme handler has no cursor-position FIXME" \
+    "FIXME: Could not figure out how to place the insertion point" \
+    "MacDown/Code/Application/MPMainController.m"
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi

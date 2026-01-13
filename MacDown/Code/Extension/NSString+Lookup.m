@@ -45,6 +45,42 @@
     return p;
 }
 
+- (NSUInteger)locationForLine:(NSUInteger)line column:(NSUInteger)column
+{
+    if (line == 0)
+        return NSNotFound;
+    if (column == 0)
+        column = 1;
+    if (!self.length)
+        return 0;
+
+    NSUInteger currentLine = 1;
+    NSUInteger location = 0;
+    while (currentLine < line && location < self.length)
+    {
+        NSUInteger start = 0;
+        NSUInteger end = 0;
+        [self getLineStart:&start end:&end contentsEnd:NULL
+                  forRange:NSMakeRange(location, 0)];
+        location = end;
+        currentLine += 1;
+    }
+
+    if (currentLine < line)
+        return self.length;
+
+    NSUInteger start = 0;
+    NSUInteger contentsEnd = 0;
+    [self getLineStart:&start end:NULL contentsEnd:&contentsEnd
+              forRange:NSMakeRange(location, 0)];
+    NSUInteger lineLength = contentsEnd - start;
+    NSUInteger offset = column - 1;
+    if (offset > lineLength)
+        offset = lineLength;
+
+    return start + offset;
+}
+
 - (NSArray *)matchesForPattern:(NSString *)p
 {
     NSRegularExpression *e =

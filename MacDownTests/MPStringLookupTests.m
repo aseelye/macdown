@@ -143,6 +143,24 @@
                    4, @"Should check bounds and return for the last line.");
 }
 
+- (void)testLocationForLineColumn
+{
+    XCTAssertEqual([@"" locationForLine:1 column:1], 0);
+    XCTAssertEqual([@"abc" locationForLine:1 column:1], 0);
+    XCTAssertEqual([@"abc" locationForLine:1 column:3], 2);
+    XCTAssertEqual([@"abc" locationForLine:1 column:4], 3);
+
+    NSString *string = @"a\nbc\ndef\n";
+    XCTAssertEqual([string locationForLine:1 column:1], 0);
+    XCTAssertEqual([string locationForLine:1 column:2], 1);
+    XCTAssertEqual([string locationForLine:2 column:1], 2);
+    XCTAssertEqual([string locationForLine:2 column:3], 4);
+    XCTAssertEqual([string locationForLine:3 column:4], 8);
+    XCTAssertEqual([string locationForLine:4 column:1], string.length);
+    XCTAssertEqual([string locationForLine:99 column:1], string.length);
+    XCTAssertEqual([string locationForLine:1 column:0], 0);
+}
+
 - (void)testTitleString
 {
     NSString *string;

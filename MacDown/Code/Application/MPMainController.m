@@ -147,13 +147,14 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     {
         return;
     }
-    // FIXME: Could not figure out how to place the insertion point at a given
-    // line and column.
-    /* Unused */ NSString *lineParam =
+    NSString *lineParam =
         [self valueForQueryItemNamed:@"line" fromQueryItems:queryItems];
-    /* Unused */ NSString *columnParam =
+    NSString *columnParam =
         [self valueForQueryItemNamed:@"column" fromQueryItems:queryItems];
-    NSLog(@"%@:%@:%@", fileParam, lineParam, columnParam);
+    NSInteger lineNumber = lineParam.integerValue;
+    NSInteger columnNumber = columnParam.integerValue;
+    NSUInteger line = lineNumber > 0 ? (NSUInteger)lineNumber : 0;
+    NSUInteger column = columnNumber > 0 ? (NSUInteger)columnNumber : 0;
 
     NSURL *target = [NSURL URLWithString:fileParam];
     if (!target)
@@ -163,11 +164,16 @@ NS_INLINE void MPShowTreatIfNeeded(void)
     NSDocumentController *c = [NSDocumentController sharedDocumentController];
     [c openDocumentWithContentsOfURL:target display:YES completionHandler:
      ^(NSDocument *document, BOOL wasOpen, NSError *error) {
-         if (!document || wasOpen || error)
+         if (!document || error)
              return;
-         NSRect frame = [NSScreen mainScreen].visibleFrame;
-         for (NSWindowController *wc in document.windowControllers)
-             [wc.window setFrame:frame display:YES];
+         if (!wasOpen)
+         {
+             NSRect frame = [NSScreen mainScreen].visibleFrame;
+             for (NSWindowController *wc in document.windowControllers)
+                 [wc.window setFrame:frame display:YES];
+         }
+         if (line && [document isKindOfClass:[MPDocument class]])
+             [(MPDocument *)document revealLine:line column:column];
      }];
 
 }

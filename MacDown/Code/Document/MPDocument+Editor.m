@@ -175,6 +175,37 @@ NS_INLINE NSColor *MPGetWebViewBackgroundColor(WebView *webview)
     return NO;
 }
 
+#pragma mark - Navigation
+
+- (void)revealLine:(NSUInteger)line column:(NSUInteger)column
+{
+    if (!line)
+        return;
+
+    NSTextView *editor = self.editor;
+    if (!editor)
+    {
+        self.pendingRevealLine = line;
+        self.pendingRevealColumn = column;
+        return;
+    }
+
+    NSString *text = editor.string ?: @"";
+    NSUInteger location = [text locationForLine:line column:column];
+    if (location == NSNotFound)
+        return;
+
+    if (location > text.length)
+        location = text.length;
+
+    NSRange range = NSMakeRange(location, 0);
+    editor.selectedRange = range;
+    [editor scrollRangeToVisible:range];
+
+    self.pendingRevealLine = 0;
+    self.pendingRevealColumn = 0;
+}
+
 #pragma mark - Editor setup
 
 - (void)setupEditor:(NSString *)changedKey
