@@ -43,7 +43,7 @@ These should return no matches once the corresponding items are **Done**:
 
 - `rg -n "methodForSelector\\(|impFunc\\(" MacDown/Code/Application`
 - `rg -n "context:NULL|context:\\(void \\*\\)0" MacDown/Code/Document/MPDocument+Observers.m`
-- `rg -n "\\bsupressesUntitledDocumentOnLaunch\\b|\\bextensionStrikethough\\b" MacDown/Code`
+- `rg -n "\\bsupressesUntitledDocumentOnLaunch\\b|\\bextensionStrikethough\\b" MacDown/Code --glob '!MacDown/Code/Preferences/MPPreferences+Migration.m'`
 - `rg -n "\\bvalueForKey:fromQueryItems:\\b" MacDown/Code/Application`
 - `rg -n "NSFilenamesPboardType|NSDragPboard" MacDown/Code/View/MPEditorView.m`
 
@@ -58,7 +58,7 @@ Whether these become permanent CI checks will be decided as we close each item.
 | F-001 | Critical | Unsafe toolbar action invocation | Done |  | Safe dispatch + regression tests; local build/test/analyze confirmed. |
 | F-002 | High | `MPDocument` god-object decomposition | Done |  | Extracted editor/observer logic into categories; added invariants (LOC + no embedded observer/editor impls). |
 | F-003 | High | Observer lifecycle safety (KVO/notifications) | Done |  | KVO uses explicit contexts; teardown is idempotent; regression tests added. |
-| F-004 | High | Preference canonicalization + migration | Not Started |  |  |
+| F-004 | High | Preference canonicalization + migration | Done |  | Migrated legacy defaults keys; updated bindings/observers; migration regression tests added. |
 | F-005 | Med | Editor view state persistence layering | Not Started |  |  |
 | F-006 | Med | Renderer flags ownership clarity | Not Started |  |  |
 | F-007 | Med | Style consistency within touched files | Not Started |  |  |
@@ -193,15 +193,21 @@ Whether these become permanent CI checks will be decided as we close each item.
 ### F-004 — Preference naming debt (misspellings + aliases leak into core logic)
 
 - Severity: **High**
-- Status: **Not Started**
+- Status: **Done**
 - Owner:
 - Notes:
 
 **Proof**
-- Misspelled stored keys: `MacDown/Code/Preferences/MPPreferences.h:19` (`supressesUntitledDocumentOnLaunch`),
-  `MacDown/Code/Preferences/MPPreferences.h:30` (`extensionStrikethough`)
-- Alias accessors depend on misspelled storage: `MacDown/Code/Preferences/MPPreferences.m:90`–`MacDown/Code/Preferences/MPPreferences.m:108`
-- Both keys observed: `MacDown/Code/Document/MPDocument_Private.h:75`
+- Legacy defaults keys + compatibility accessors centralized:
+  `MacDown/Code/Preferences/MPPreferences+Migration.m:8`
+- Canonical keys now stored directly via PAPreferences dynamic properties:
+  `MacDown/Code/Preferences/MPPreferences.m:75`
+- Document observes only canonical keys:
+  `MacDown/Code/Document/MPDocument_Private.h:67`
+- NIB bindings use canonical key paths:
+  `MacDown/Localization/Base.lproj/MPGeneralPreferencesViewController.xib:100`,
+  `MacDown/Localization/Base.lproj/MPMarkdownPreferencesViewController.xib:74`,
+  `MacDown/Localization/Base.lproj/MainMenu.xib:447`
 
 **Problem**
 - The misspellings increase cognitive load and encourage duplication (multiple
@@ -216,8 +222,10 @@ Whether these become permanent CI checks will be decided as we close each item.
 - Add a migration regression test (legacy value → canonical value preserved).
 
 **Verification**
-- `rg` for `supressesUntitledDocumentOnLaunch` / `extensionStrikethough` returns
-  only the migration shim (or no matches if fully removed).
+- Unit: `MacDownTests/MPPreferencesMigrationTests.m:36` passes.
+- `Tools/check_maintainability_invariants.sh` passes (enforces F-004).
+- `rg -n "\\bsupressesUntitledDocumentOnLaunch\\b|\\bextensionStrikethough\\b" MacDown/Code --glob '!MacDown/Code/Preferences/MPPreferences+Migration.m'`
+  returns no matches.
 
 ---
 

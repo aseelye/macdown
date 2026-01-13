@@ -73,8 +73,8 @@ NS_INLINE NSSet *MPRendererPreferencesToObserve(void)
             @"markdownManualRender",
 
             @"extensionIntraEmphasis", @"extensionTables", @"extensionFencedCode",
-            @"extensionAutolink", @"extensionStrikethough",
-            @"extensionStrikethrough", @"extensionUnderline",
+            @"extensionAutolink", @"extensionStrikethrough",
+            @"extensionUnderline",
             @"extensionSuperscript", @"extensionHighlight", @"extensionFootnotes",
             @"extensionQuote", @"extensionSmartyPants",
 

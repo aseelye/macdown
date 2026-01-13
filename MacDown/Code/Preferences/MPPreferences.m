@@ -7,6 +7,7 @@
 //
 
 #import "MPPreferences.h"
+#import "MPPreferences+Migration.h"
 #import "NSUserDefaults+Suite.h"
 #import "MPGlobals.h"
 
@@ -43,6 +44,7 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
     if (!self)
         return nil;
 
+    [self migrateLegacyKeysIfNeeded];
     [self cleanupObsoleteAutosaveValues];
 
     NSString *version =
@@ -72,40 +74,20 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
 
 @dynamic firstVersionInstalled;
 @dynamic latestVersionInstalled;
-@dynamic supressesUntitledDocumentOnLaunch;
+@dynamic suppressesUntitledDocumentOnLaunch;
 @dynamic createFileForLinkTarget;
 
 @dynamic extensionIntraEmphasis;
 @dynamic extensionTables;
 @dynamic extensionFencedCode;
 @dynamic extensionAutolink;
-@dynamic extensionStrikethough;
 @dynamic extensionUnderline;
 @dynamic extensionSuperscript;
 @dynamic extensionHighlight;
 @dynamic extensionFootnotes;
 @dynamic extensionQuote;
 @dynamic extensionSmartyPants;
-
-- (BOOL)suppressesUntitledDocumentOnLaunch
-{
-    return self.supressesUntitledDocumentOnLaunch;
-}
-
-- (void)setSuppressesUntitledDocumentOnLaunch:(BOOL)value
-{
-    self.supressesUntitledDocumentOnLaunch = value;
-}
-
-- (BOOL)extensionStrikethrough
-{
-    return self.extensionStrikethough;
-}
-
-- (void)setExtensionStrikethrough:(BOOL)value
-{
-    self.extensionStrikethough = value;
-}
+@dynamic extensionStrikethrough;
 
 @dynamic markdownManualRender;
 
@@ -203,12 +185,14 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
                     inSuiteNamed:kMPApplicationSuiteName];
 }
 
-- (NSString *)pipedContentFileToOpen {
+- (NSString *)pipedContentFileToOpen
+{
     return [self.userDefaults objectForKey:kMPPipedContentFileToOpen
                               inSuiteNamed:kMPApplicationSuiteName];
 }
 
-- (void)setPipedContentFileToOpen:(NSString *)pipedContentFileToOpenPath {
+- (void)setPipedContentFileToOpen:(NSString *)pipedContentFileToOpenPath
+{
     [self.userDefaults setObject:pipedContentFileToOpenPath
                           forKey:kMPPipedContentFileToOpen
                     inSuiteNamed:kMPApplicationSuiteName];

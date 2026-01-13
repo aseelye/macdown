@@ -15,6 +15,7 @@
 		1F0D9D78194AC7F7008E1856 /* MPHtmlPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F0D9D6D194AC7F7008E1856 /* MPHtmlPreferencesViewController.m */; };
 		1F0D9D7A194AC7F7008E1856 /* MPMarkdownPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F0D9D70194AC7F7008E1856 /* MPMarkdownPreferencesViewController.m */; };
 		1F0D9D7C194AC7F7008E1856 /* MPPreferences.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F0D9D73194AC7F7008E1856 /* MPPreferences.m */; };
+		A4B5C6D7E8F90123456789AD /* MPPreferences+Migration.m in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F90123456789AC /* MPPreferences+Migration.m */; };
 		1F0D9D7D194AC7F7008E1856 /* MPPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F0D9D75194AC7F7008E1856 /* MPPreferencesViewController.m */; };
 		1F0D9D93194AC852008E1856 /* MPDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F0D9D92194AC852008E1856 /* MPDocument.m */; };
 		1F0D9DAA194AC8CB008E1856 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 1F0D9DA6194AC8CB008E1856 /* Credits.rtf */; };
@@ -64,6 +65,7 @@
 		1F9F0A152C2A5F3E00BEEF08 /* MPScrollSyncController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F9F0A142C2A5F3E00BEEF07 /* MPScrollSyncController.m */; };
 		1F9F0A172C2A5F3E00BEEF0A /* MPUserDefaultsSuiteTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F9F0A162C2A5F3E00BEEF09 /* MPUserDefaultsSuiteTests.m */; };
 		1F9F0A1A2C2A5F3E00BEEF0D /* MPWebKitWorkarounds.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F9F0A192C2A5F3E00BEEF0C /* MPWebKitWorkarounds.m */; };
+		B0C1D2E3F4A5061728394A5B /* MPPreferencesMigrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C1D2E3F4A5061728394A5A /* MPPreferencesMigrationTests.m */; };
 		1FA6DE251941CC9E000409FB /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FA6DE241941CC9E000409FB /* Cocoa.framework */; };
 		1FA6DE481941CC9E000409FB /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FA6DE241941CC9E000409FB /* Cocoa.framework */; };
 		1FB3C0241E5061A2002AEB6A /* MPExportPanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1FB3C0221E5061A2002AEB6A /* MPExportPanelAccessoryViewController.xib */; };
@@ -488,6 +490,7 @@
 		1FCD711A1A20BE2F00C028B5 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = Dependency/version/version.h; sourceTree = SOURCE_ROOT; };
 		1FCDCA301944F96E00B1F966 /* MacDownTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "MacDownTests-Info.plist"; sourceTree = "<group>"; };
 		1FCDCA311944F96E00B1F966 /* MPPreferencesTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPPreferencesTests.m; sourceTree = "<group>"; };
+		B0C1D2E3F4A5061728394A5A /* MPPreferencesMigrationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPPreferencesMigrationTests.m; sourceTree = "<group>"; };
 		1FCDCA331944F96E00B1F966 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1FCE066319633D6B00DC83B4 /* Data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Data; path = Resources/Data; sourceTree = "<group>"; };
 		1FF1420119A8987500CF8A6A /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -528,6 +531,8 @@
 		9F3E0A1B2C2D3E4F5A6B7C94 /* MPDocument+Observers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPDocument+Observers.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CA0 /* MPPreferences+Hoedown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MPPreferences+Hoedown.h"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CA1 /* MPPreferences+Hoedown.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPPreferences+Hoedown.m"; sourceTree = "<group>"; };
+		A4B5C6D7E8F90123456789AB /* MPPreferences+Migration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MPPreferences+Migration.h"; sourceTree = "<group>"; };
+		A4B5C6D7E8F90123456789AC /* MPPreferences+Migration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "MPPreferences+Migration.m"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CB0 /* WebView+MPSugar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebView+MPSugar.h"; sourceTree = "<group>"; };
 		9F3E0A1B2C2D3E4F5A6B7CB1 /* WebView+MPSugar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebView+MPSugar.m"; sourceTree = "<group>"; };
 		E70ECDD4241C933C00537A46 /* ru-RU */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ru-RU"; path = "Localization/ru-RU.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -663,6 +668,8 @@
 				1F3619E81F36DA0F00EDA15A /* MPTerminalPreferencesViewController.xib */,
 				1F0D9D72194AC7F7008E1856 /* MPPreferences.h */,
 				1F0D9D73194AC7F7008E1856 /* MPPreferences.m */,
+				A4B5C6D7E8F90123456789AB /* MPPreferences+Migration.h */,
+				A4B5C6D7E8F90123456789AC /* MPPreferences+Migration.m */,
 				9F3E0A1B2C2D3E4F5A6B7CA0 /* MPPreferences+Hoedown.h */,
 				9F3E0A1B2C2D3E4F5A6B7CA1 /* MPPreferences+Hoedown.m */,
 			);
@@ -888,6 +895,7 @@
 				1FF1420319A8A24800CF8A6A /* MPUtilityTests.m */,
 				1F25E1C21A50F4F10029371D /* MPColorTests.m */,
 				1FCDCA311944F96E00B1F966 /* MPPreferencesTests.m */,
+				B0C1D2E3F4A5061728394A5A /* MPPreferencesMigrationTests.m */,
 				1FFF301C1948A5320009AF24 /* MPStringLookupTests.m */,
 				1FFEB31819729F7C00B2254F /* MPAssetTests.m */,
 				1FFEB3261972DAB400B2254F /* MPHTMLTabularizeTests.m */,
@@ -1281,6 +1289,7 @@
 				852D523C1E260A6400BA7162 /* MPTerminalPreferencesViewController.m in Sources */,
 				1F0D9D78194AC7F7008E1856 /* MPHtmlPreferencesViewController.m in Sources */,
 				1F0D9D7C194AC7F7008E1856 /* MPPreferences.m in Sources */,
+				A4B5C6D7E8F90123456789AD /* MPPreferences+Migration.m in Sources */,
 				9F3E0A1B2C2D3E4F5A6B7CA2 /* MPPreferences+Hoedown.m in Sources */,
 				1F0D9DAF194AC905008E1856 /* main.m in Sources */,
 				1F0D9D66194AC7CF008E1856 /* NSTextView+Autocomplete.m in Sources */,
@@ -1319,6 +1328,7 @@
 			files = (
 				1FFEB31919729F7C00B2254F /* MPAssetTests.m in Sources */,
 				1F51C9A5194565050015A96F /* MPPreferencesTests.m in Sources */,
+				B0C1D2E3F4A5061728394A5B /* MPPreferencesMigrationTests.m in Sources */,
 				1FF1420419A8A24800CF8A6A /* MPUtilityTests.m in Sources */,
 				1FFEB3271972DAB400B2254F /* MPHTMLTabularizeTests.m in Sources */,
 				1F25E1C31A50F4F10029371D /* MPColorTests.m in Sources */,

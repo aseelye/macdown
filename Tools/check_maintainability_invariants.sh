@@ -2,8 +2,8 @@
 set -eu
 
 # Usage: `Tools/check_maintainability_invariants.sh`
-# This script currently takes no arguments; `$1/$2/$3` are parameters for the
-# internal `check_no_matches` helper function.
+# This script currently takes no arguments; `$1/$2/$3/$4` are parameters for the
+# internal helper functions.
 
 cd "$(dirname "$0")/.."
 
@@ -24,6 +24,40 @@ check_no_matches() {
         if grep -R -n -E "$pattern" "$path" >/dev/null 2>&1; then
             echo "FAIL: $description"
             grep -R -n -E "$pattern" "$path" || true
+            fail=1
+        fi
+    fi
+}
+
+check_no_matches_excluding() {
+    description="$1"
+    pattern="$2"
+    path="$3"
+    excluded_path="$4"
+
+    if command -v rg >/dev/null 2>&1; then
+        excluded_tail="$excluded_path"
+        if [ "${excluded_path#"$path"/}" != "$excluded_path" ]; then
+            excluded_tail="${excluded_path#"$path"/}"
+        fi
+
+        if rg -n "$pattern" "$path" \
+            --glob "!$excluded_path" \
+            --glob "!**/$excluded_tail" \
+            >/dev/null; then
+            echo "FAIL: $description"
+            rg -n "$pattern" "$path" \
+                --glob "!$excluded_path" \
+                --glob "!**/$excluded_tail" \
+                || true
+            fail=1
+        fi
+    else
+        matches="$(grep -R -n -E "$pattern" "$path" 2>/dev/null || true)"
+        filtered="$(printf "%s\n" "$matches" | grep -v "^$excluded_path:" || true)"
+        if [ -n "$filtered" ]; then
+            echo "FAIL: $description"
+            printf "%s\n" "$filtered"
             fail=1
         fi
     fi
@@ -85,6 +119,17 @@ check_no_matches \
     "F-003: MPDocument KVO removals include explicit context" \
     "removeObserver:self forKeyPath:key\\];" \
     "MacDown/Code/Document/MPDocument+Observers.m"
+
+check_no_matches_excluding \
+    "F-004: legacy preference keys only in migration shim" \
+    "supressesUntitledDocumentOnLaunch|extensionStrikethough" \
+    "MacDown/Code" \
+    "MacDown/Code/Preferences/MPPreferences+Migration.m"
+
+check_no_matches \
+    "F-004: NIB bindings do not use legacy preference keys" \
+    "supressesUntitledDocumentOnLaunch|extensionStrikethough" \
+    "MacDown/Localization/Base.lproj"
 
 if [ "$fail" -ne 0 ]; then
     exit 1
